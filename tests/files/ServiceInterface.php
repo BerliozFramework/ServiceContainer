@@ -13,16 +13,6 @@
 namespace Berlioz\ServiceContainer\Tests\files;
 
 
-class Service2 implements ServiceInterface
+interface ServiceInterface
 {
-    public $param1;
-    public $param2;
-    public $param3;
-
-    public function __construct(string $param1, Service1 $param2, bool $param3 = true)
-    {
-        $this->param1 = $param1;
-        $this->param2 = $param2;
-        $this->param3 = $param3;
-    }
 }

@@ -19,6 +19,8 @@ use Psr\Container\ContainerInterface;
 
 class ServiceContainer implements ContainerInterface
 {
+    /** @var array Services constraints */
+    private $constraints = [];
     /** @var array Services configuration */
     private $servicesConfiguration;
     /** @var array Classes */
@@ -155,7 +157,68 @@ class ServiceContainer implements ContainerInterface
         $serviceAlias = $serviceConfiguration['alias'] ?? $serviceClass;
         $serviceArguments = $serviceConfiguration['arguments'];
 
+        // Check constraints
+        $this->checkConstraints($serviceAlias, $serviceClass);
+
         return $this->services[$serviceAlias] = $this->dependencyInjection($serviceClass, $serviceArguments);
+    }
+
+    /**
+     * Check constraints for a service name.
+     *
+     * @param string $name  Name of service
+     * @param string $class Class name of service
+     *
+     * @return void
+     * @throws \Berlioz\ServiceContainer\Exception\ContainerException
+     */
+    private function checkConstraints(string $name, string $class): void
+    {
+        // Check constraint
+        if (isset($this->constraints[$name])) {
+            if (!is_a($class, $this->constraints[$name], true)) {
+                throw new ContainerException(sprintf('Service "%s" must implements "%s" class', $name, $this->constraints[$name]));
+            }
+        }
+    }
+
+    /**
+     * Get constraints.
+     *
+     * @return array
+     */
+    public function getConstraints(): array
+    {
+        return $this->constraints ?? [];
+    }
+
+    /**
+     * Set constraints.
+     *
+     * @param array $constraints
+     *
+     * @return \Berlioz\ServiceContainer\ServiceContainer
+     */
+    public function setConstraints(array $constraints): ServiceContainer
+    {
+        $this->constraints = $constraints;
+
+        return $this;
+    }
+
+    /**
+     * Set constraint for service.
+     *
+     * @param string $serviceName Service name
+     * @param string $class       Class name
+     *
+     * @return \Berlioz\ServiceContainer\ServiceContainer
+     */
+    public function addConstraint(string $serviceName, string $class): ServiceContainer
+    {
+        $this->constraints[$serviceName] = $class;
+
+        return $this;
     }
 
     /**

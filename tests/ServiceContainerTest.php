@@ -18,6 +18,7 @@ use Berlioz\ServiceContainer\ServiceContainer;
 use Berlioz\ServiceContainer\Tests\files\Service1;
 use Berlioz\ServiceContainer\Tests\files\Service2;
 use Berlioz\ServiceContainer\Tests\files\Service3;
+use Berlioz\ServiceContainer\Tests\files\ServiceInterface;
 use PHPUnit\Framework\TestCase;
 
 class ServiceContainerTest extends TestCase
@@ -162,6 +163,25 @@ EOD;
         $method = $reflection->getMethod('createService');
         $method->setAccessible(true);
         $method->invokeArgs($serviceContainer, [json_decode($json, true)]);
+    }
+
+    /**
+     * @throws \Psr\Container\ContainerExceptionInterface
+     * @throws \ReflectionException
+     */
+    public function testCheckConstraints()
+    {
+        $serviceContainer = new ServiceContainer($this->getConfig());
+        $serviceContainer->addConstraint('service', ServiceInterface::class);
+        $reflection = new \ReflectionClass($serviceContainer);
+        $method = $reflection->getMethod('checkConstraints');
+        $method->setAccessible(true);
+
+        $method->invokeArgs($serviceContainer, ['service', Service2::class]);
+
+        $this->expectException(ContainerException::class);
+
+        $method->invokeArgs($serviceContainer, ['service', Service1::class]);
     }
 
     /**
