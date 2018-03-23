@@ -62,7 +62,8 @@ class ServiceContainer implements ContainerInterface
         $className = get_class($object);
 
         $this->services[$alias ?? $className] = $object;
-        $this->classes[$className][] = $alias ?? $className;
+
+        $this->associateClassToService($className, $alias ?? $className);
 
         return $alias ?? $className;
     }
@@ -95,13 +96,34 @@ class ServiceContainer implements ContainerInterface
         if (($finalConfiguration = $this->makeConfiguration($serviceConfiguration)) !== false) {
             $alias = $finalConfiguration['alias'] ?? $alias;
             $finalConfiguration['alias'] = $alias;
-            $this->classes[$finalConfiguration['class']][] = $alias;
+
+            $this->associateClassToService($finalConfiguration['class'], $alias, false);
 
             $this->servicesConfiguration[$alias] = $finalConfiguration;
 
             return $alias;
         } else {
             throw new ContainerException(sprintf('Bad configuration format for service named "%s", must be class name or array', $alias ?? (string) $serviceConfiguration['class'] ?? 'Unknown'));
+        }
+    }
+
+    /**
+     * Associate class name to a service.
+     *
+     * @param string $className Class name
+     * @param string $alias     Alias of service
+     * @param bool   $autoload  Auto load
+     */
+    private function associateClassToService(string $className, string $alias, bool $autoload = false)
+    {
+        $this->classes[$className][] = $alias;
+
+        foreach (class_parents($className, true) as $classParent) {
+            $this->classes[$classParent][] = $alias;
+        }
+
+        foreach (class_implements($className, true) as $classParent) {
+            $this->classes[$classParent][] = $alias;
         }
     }
 
@@ -160,7 +182,11 @@ class ServiceContainer implements ContainerInterface
         // Check constraints
         $this->checkConstraints($serviceAlias, $serviceClass);
 
-        return $this->services[$serviceAlias] = $this->dependencyInjection($serviceClass, $serviceArguments);
+        $this->services[$serviceAlias] = $this->dependencyInjection($serviceClass, $serviceArguments);
+
+        $this->associateClassToService($serviceClass, $serviceAlias);
+
+        return $this->services[$serviceAlias];
     }
 
     /**
