@@ -33,11 +33,11 @@ class ServiceContainer implements ContainerInterface
     /**
      * ServiceContainer constructor.
      *
-     * @param array $servicesConfiguration
+     * @param array|null $servicesConfiguration
      *
      * @throws \Psr\Container\ContainerExceptionInterface
      */
-    public function __construct(array $servicesConfiguration = null)
+    public function __construct(?array $servicesConfiguration = null)
     {
         $this->servicesConfiguration = [];
         $this->classes = [];
