@@ -97,7 +97,7 @@ class ServiceContainer implements ContainerInterface
             $alias = $finalConfiguration['alias'] ?? $alias;
             $finalConfiguration['alias'] = $alias;
 
-            $this->associateClassToService($finalConfiguration['class'], $alias, false);
+            $this->associateClassToService($finalConfiguration['class'], $alias, true);
 
             $this->servicesConfiguration[$alias] = $finalConfiguration;
 
@@ -114,15 +114,15 @@ class ServiceContainer implements ContainerInterface
      * @param string $alias     Alias of service
      * @param bool   $autoload  Auto load
      */
-    private function associateClassToService(string $className, string $alias, bool $autoload = false)
+    private function associateClassToService(string $className, string $alias, bool $autoload = true)
     {
         $this->classes[$className][] = $alias;
 
-        foreach (class_parents($className, true) as $classParent) {
+        foreach (class_parents($className, $autoload) as $classParent) {
             $this->classes[$classParent][] = $alias;
         }
 
-        foreach (class_implements($className, true) as $classParent) {
+        foreach (class_implements($className, $autoload) as $classParent) {
             $this->classes[$classParent][] = $alias;
         }
     }
@@ -274,7 +274,7 @@ class ServiceContainer implements ContainerInterface
                     if (count($reflectionParameters) > 0) {
                         foreach ($reflectionParameters as $reflectionParameter) {
                             // Parameter given in configuration and waiting type is built in ?
-                            if (isset($arguments[$reflectionParameter->getName()])
+                            if (array_key_exists($reflectionParameter->getName(), $arguments)
                                 && !$this->isValidServiceConfiguration($arguments[$reflectionParameter->getName()])
                                 && (!$reflectionParameter->hasType() || $reflectionParameter->getType()->isBuiltin())) {
                                 $parameters[$reflectionParameter->getName()] = $arguments[$reflectionParameter->getName()];
@@ -282,9 +282,9 @@ class ServiceContainer implements ContainerInterface
                                 try {
                                     // Parameter is class ?
                                     if (($reflectionParameter->hasType() && !$reflectionParameter->getType()->isBuiltin())
-                                        || (isset($arguments[$reflectionParameter->getName()]) && $this->isValidServiceConfiguration($arguments[$reflectionParameter->getName()]))) {
+                                        || (array_key_exists($reflectionParameter->getName(), $arguments) && $this->isValidServiceConfiguration($arguments[$reflectionParameter->getName()]))) {
                                         // Argument is object ? So service ?
-                                        if (isset($arguments[$reflectionParameter->getName()])
+                                        if (array_key_exists($reflectionParameter->getName(), $arguments)
                                             && $this->isValidServiceConfiguration($arguments[$reflectionParameter->getName()])) {
                                             if (($subServiceConfiguration = $this->makeConfiguration($arguments[$reflectionParameter->getName()])) !== false) {
                                                 $parameters[$reflectionParameter->getName()] = $this->createService($subServiceConfiguration);
