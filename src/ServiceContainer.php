@@ -44,6 +44,9 @@ class ServiceContainer implements ContainerInterface
         $this->services = [];
         $this->initialization = [];
 
+        // Register me into services
+        $this->registerObjectAsService($this, 'ServiceContainer');
+
         if (!empty($servicesConfiguration)) {
             $this->registerServices($servicesConfiguration);
         }
@@ -117,13 +120,16 @@ class ServiceContainer implements ContainerInterface
     private function associateClassToService(string $className, string $alias, bool $autoload = true)
     {
         $this->classes[$className][] = $alias;
+        $this->classes[$className] = array_unique($this->classes[$className]);
 
         foreach (class_parents($className, $autoload) as $classParent) {
             $this->classes[$classParent][] = $alias;
+            $this->classes[$classParent] = array_unique($this->classes[$classParent]);
         }
 
         foreach (class_implements($className, $autoload) as $classParent) {
             $this->classes[$classParent][] = $alias;
+            $this->classes[$classParent] = array_unique($this->classes[$classParent]);
         }
     }
 
@@ -345,10 +351,11 @@ class ServiceContainer implements ContainerInterface
      */
     public function get($id)
     {
-        if (isset($this->initialization[$id]) && $this->initialization[$id] === true) {
+        if (in_array($id, $this->initialization)) {
             throw new ContainerException(sprintf('Recursive call of service "%s"', $id));
         } else {
-            $this->initialization[$id] = true;
+            // Add service to currently initialization
+            $this->initialization[] = $id;
 
             // Check if not already instanced?
             if (isset($this->services[$id])) {
@@ -368,7 +375,10 @@ class ServiceContainer implements ContainerInterface
                 }
             }
 
-            $this->initialization[$id] = false;
+            // Delete service from currently initialization
+            if (($key = array_search($id, $this->initialization)) !== false) {
+                unset($this->initialization[$key]);
+            }
         }
 
         return $service;
