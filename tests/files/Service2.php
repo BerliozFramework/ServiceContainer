@@ -30,4 +30,9 @@ class Service2 implements ServiceInterface
     {
         return sprintf('It\'s a test "%s"', $param);
     }
+
+    public function getParam2()
+    {
+        return $this->param2;
+    }
 }

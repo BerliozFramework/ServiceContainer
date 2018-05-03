@@ -35,11 +35,27 @@ class ServiceContainerTest extends TestCase
       "param3": 1 
     }
   },
+  "aliasService1X": {
+    "class": "\\Berlioz\\ServiceContainer\\Tests\\files\\Service1",
+    "arguments": {
+      "param1": "another",
+      "param2": "test",
+      "param3": 1 
+    }
+  },
   "aliasService2": {
     "class": "\\Berlioz\\ServiceContainer\\Tests\\files\\Service2",
     "arguments": {
       "param3": false,
       "param1": "test"
+    }
+  },
+  "aliasServiceX": {
+    "class": "\\Berlioz\\ServiceContainer\\Tests\\files\\Service2",
+    "arguments": {
+      "param3": false,
+      "param1": "test",
+      "param2": "@aliasService1X"
     }
   }
 }
@@ -85,6 +101,17 @@ EOD;
         $this->assertInstanceOf('\Berlioz\ServiceContainer\Tests\files\Service1', $service = $serviceContainer->get('service'));
         $this->assertEquals($service, $serviceContainer->get('service'));
         $this->assertTrue($serviceContainer->has('service'));
+    }
+
+    public function testRecursivelyServices()
+    {
+        $serviceContainer = new ServiceContainer($this->getConfig());
+        $service1 = $serviceContainer->get(Service1::class);
+        $service1X = $serviceContainer->get('aliasService1X');
+        $serviceX = $serviceContainer->get('aliasServiceX');
+
+        $this->assertNotEquals($service1, $serviceX->getParam2());
+        $this->assertEquals($service1X, $serviceX->getParam2());
     }
 
     /**

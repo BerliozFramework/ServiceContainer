@@ -25,4 +25,9 @@ class Service1
         $this->param2 = $param2;
         $this->param3 = $param3;
     }
+
+    public function getParam1(): string
+    {
+        return $this->param1;
+    }
 }
