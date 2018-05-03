@@ -25,4 +25,9 @@ class Service2 implements ServiceInterface
         $this->param2 = $param2;
         $this->param3 = $param3;
     }
+
+    public function test(string $param)
+    {
+        return sprintf('It\'s a test "%s"', $param);
+    }
 }

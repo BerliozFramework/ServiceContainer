@@ -187,26 +187,26 @@ EOD;
     /**
      * @throws \Psr\Container\ContainerExceptionInterface
      */
-    public function testDependencyInjection()
+    public function testNewInstanceOf()
     {
         $serviceContainer = new ServiceContainer;
-        $service = $serviceContainer->dependencyInjection(Service3::class,
-                                                          ['param1' => 'test',
-                                                           'param2' => 'test',
-                                                           'param3' => 3,
-                                                           'param4' => 'test']);
+        $service = $serviceContainer->newInstanceOf(Service3::class,
+                                                    ['param1' => 'test',
+                                                     'param2' => 'test',
+                                                     'param3' => 3,
+                                                     'param4' => 'test']);
         $this->assertInstanceOf(Service3::class, $service);
     }
 
     /**
      * @throws \Psr\Container\ContainerExceptionInterface
      */
-    public function testDependencyInjection_optionalParameters()
+    public function testNewInstanceOf_optionalParameters()
     {
         $serviceContainer = new ServiceContainer;
-        $service = $serviceContainer->dependencyInjection(Service3::class,
-                                                          ['param1' => 'test',
-                                                           'param2' => 'test']);
+        $service = $serviceContainer->newInstanceOf(Service3::class,
+                                                    ['param1' => 'test',
+                                                     'param2' => 'test']);
         $this->assertInstanceOf(Service3::class, $service);
         $this->assertNull($service->param3);
         $this->assertEquals('test', $service->param4);
@@ -215,12 +215,25 @@ EOD;
     /**
      * @throws \Psr\Container\ContainerExceptionInterface
      */
-    public function testDependencyInjection_missingParameter()
+    public function testNewInstanceOf_missingParameter()
     {
         $this->expectException(ContainerException::class);
         $serviceContainer = new ServiceContainer;
-        $serviceContainer->dependencyInjection(Service3::class,
-                                               ['param1' => 'test',
-                                                'param4' => 'test2']);
+        $serviceContainer->newInstanceOf(Service3::class,
+                                         ['param1' => 'test',
+                                          'param4' => 'test2']);
+    }
+
+    /**
+     * @throws \Psr\Container\ContainerExceptionInterface
+     */
+    public function testInvokeMethod()
+    {
+        $serviceContainer = new ServiceContainer($this->getConfig());
+        $service = $serviceContainer->get(Service2::class);
+        $result = $serviceContainer->invokeMethod($service,
+                                                  'test',
+                                                  ['param' => ($str = 'toto')]);
+        $this->assertEquals(sprintf('It\'s a test "%s"', $str), $result);
     }
 }

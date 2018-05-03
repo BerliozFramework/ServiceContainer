@@ -12,9 +12,9 @@
 
 namespace Berlioz\ServiceContainer;
 
-
 use Berlioz\ServiceContainer\Exception\ContainerException;
 use Berlioz\ServiceContainer\Exception\NotFoundException;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 
 class ServiceContainer implements ContainerInterface
@@ -188,7 +188,8 @@ class ServiceContainer implements ContainerInterface
         // Check constraints
         $this->checkConstraints($serviceAlias, $serviceClass);
 
-        $this->services[$serviceAlias] = $this->dependencyInjection($serviceClass, $serviceArguments);
+        // Construct service
+        $this->services[$serviceAlias] = $this->newInstanceOf($serviceClass, $serviceArguments);
 
         $this->associateClassToService($serviceClass, $serviceAlias);
 
@@ -254,93 +255,6 @@ class ServiceContainer implements ContainerInterface
     }
 
     /**
-     * Object creation with dependency injection from services.
-     *
-     * @param string $className Class name
-     * @param array  $arguments Named arguments
-     *
-     * @return object
-     * @throws \Psr\Container\ContainerExceptionInterface
-     */
-    public function dependencyInjection(string $className, array $arguments = [])
-    {
-        $parameters = [];
-
-        // Class exists ?
-        if (!class_exists($className)) {
-            throw new NotFoundException(sprintf('Service "%s" doesn\'t exists', $className));
-        } else {
-            // If class has constructor ?
-            if (method_exists($className, '__construct')) {
-                // Construct parameters list for constructor
-                try {
-                    $reflectionMethod = new \ReflectionMethod($className, '__construct');
-                    $reflectionParameters = $reflectionMethod->getParameters();
-
-                    if (count($reflectionParameters) > 0) {
-                        foreach ($reflectionParameters as $reflectionParameter) {
-                            // Parameter given in configuration and waiting type is built in ?
-                            if (array_key_exists($reflectionParameter->getName(), $arguments)
-                                && !$this->isValidServiceConfiguration($arguments[$reflectionParameter->getName()])
-                                && (!$reflectionParameter->hasType() || $reflectionParameter->getType()->isBuiltin())) {
-                                $parameters[$reflectionParameter->getName()] = $arguments[$reflectionParameter->getName()];
-                            } else {
-                                try {
-                                    // Parameter is class ?
-                                    if (($reflectionParameter->hasType() && !$reflectionParameter->getType()->isBuiltin())
-                                        || (array_key_exists($reflectionParameter->getName(), $arguments) && $this->isValidServiceConfiguration($arguments[$reflectionParameter->getName()]))) {
-                                        // Argument is object ? So service ?
-                                        if (array_key_exists($reflectionParameter->getName(), $arguments)
-                                            && $this->isValidServiceConfiguration($arguments[$reflectionParameter->getName()])) {
-                                            if (($subServiceConfiguration = $this->makeConfiguration($arguments[$reflectionParameter->getName()])) !== false) {
-                                                $parameters[$reflectionParameter->getName()] = $this->createService($subServiceConfiguration);
-                                            } else {
-                                                throw new ContainerException(sprintf('Sub service "%s" in argument of "%s" class has bad configuration', $reflectionParameter->getName(), $className));
-                                            }
-                                        } else {
-                                            // Get waiting service in configuration if available or declared class
-                                            $waitingService = $arguments[$reflectionParameter->getName()] ?? $reflectionParameter->getType()->getName();
-
-                                            $parameters[$reflectionParameter->getName()] = $this->get($waitingService);
-                                        }
-                                    } else {
-                                        throw new ContainerException(sprintf('Missing "%s" parameter in configuration for "%s" class', $reflectionParameter->getName(), $className));
-                                    }
-                                } catch (\Exception $e) {
-                                    if ($reflectionParameter->isDefaultValueAvailable()) {
-                                        $parameters[$reflectionParameter->getName()] = $reflectionParameter->getDefaultValue();
-                                    } else {
-                                        if ($reflectionParameter->allowsNull()) {
-                                            $parameters[$reflectionParameter->getName()] = null;
-                                        } else {
-                                            throw $e;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } catch (ContainerException $e) {
-                    throw $e;
-                } catch (\Exception $e) {
-                    throw new ContainerException(sprintf('Error during reflection of class "%s"', $className), 0, $e);
-                }
-            }
-        }
-
-        // Construction of service
-        try {
-            if (count($parameters) > 0) {
-                return new $className(...array_values($parameters));
-            } else {
-                return new $className;
-            }
-        } catch (\Exception $e) {
-            throw new ContainerException(sprintf('Error during creation of class "%s"', $className), 0, $e);
-        }
-    }
-
-    /**
      * Finds an entry of the container by its identifier and returns it.
      *
      * @param string $id Identifier of the entry to look for.
@@ -401,5 +315,178 @@ class ServiceContainer implements ContainerInterface
                || isset($this->services[$id])
                || isset($this->classes[$id])
                || class_exists($id);
+    }
+
+    /**
+     * Create new instance of a class.
+     *
+     * @param object|string $class               Class name or object
+     * @param array         $arguments           Arguments
+     * @param bool          $dependencyInjection Dependency injection? (default: true)
+     *
+     * @return mixed
+     * @throws \Berlioz\ServiceContainer\Exception\ContainerException
+     */
+    public function newInstanceOf($class, array $arguments = [], bool $dependencyInjection = true)
+    {
+        // Reflection of class
+        try {
+            $reflectionClass = new \ReflectionClass($class);
+        } catch (\Exception $e) {
+            if (!class_exists($class)) {
+                throw new NotFoundException(sprintf('Class "%s" doesn\'t exists', $class), 0, $e);
+            }
+
+            throw new ContainerException(sprintf('Error during reflection: %s', $e->getMessage()), 0, $e);
+        }
+
+        // Dependency injection?
+        if ($dependencyInjection) {
+            if (!is_null($constructor = $reflectionClass->getConstructor())) {
+                try {
+                    $arguments = $this->getDependencyInjectionParameters($constructor->getParameters(), $arguments);
+                } catch (ContainerExceptionInterface $e) {
+                    throw new ContainerException(sprintf('Error during dependency injection of class "%s"', $class), 0, $e);
+                }
+            }
+        }
+
+        return $reflectionClass->newInstanceArgs($arguments);
+    }
+
+    /**
+     * Invocation of method.
+     *
+     * @param object $object              Object
+     * @param string $method              Method name
+     * @param array  $arguments           Arguments
+     * @param bool   $dependencyInjection Dependency injection? (default: true)
+     *
+     * @return mixed
+     * @throws \Berlioz\ServiceContainer\Exception\ContainerException
+     */
+    public function invokeMethod($object, string $method, array $arguments = [], bool $dependencyInjection = true)
+    {
+        // Check validity of first argument
+        if (!is_object($object)) {
+            throw new ContainerException(sprintf('First argument must be a valid object, %s given', gettype($object)));
+        }
+
+        // Reflection of method
+        try {
+            $reflectionMethod = new \ReflectionMethod($object, $method);
+        } catch (\Exception $e) {
+            if (!method_exists($object, $method)) {
+                throw new NotFoundException(sprintf('Method "%s::%s" doesn\'t exists', get_class($object), $method), 0, $e);
+            }
+
+            throw new ContainerException(sprintf('Error during reflection: %s', $e->getMessage()), 0, $e);
+        }
+
+        // Dependency injection?
+        if ($dependencyInjection) {
+            try {
+                $arguments = $this->getDependencyInjectionParameters($reflectionMethod->getParameters(), $arguments);
+            } catch (ContainerExceptionInterface $e) {
+                throw new ContainerException(sprintf('Error during dependency injection of method "%s::%s"', get_class($object), $method), 0, $e);
+            }
+        }
+
+        return $reflectionMethod->invokeArgs($object, $arguments);
+    }
+
+    /**
+     * Invocation of function.
+     *
+     * @param string $function            Function name
+     * @param array  $arguments           Arguments
+     * @param bool   $dependencyInjection Dependency injection? (default: true)
+     *
+     * @return mixed
+     * @throws \Berlioz\ServiceContainer\Exception\ContainerException
+     */
+    public function invokeFunction(string $function, array $arguments = [], bool $dependencyInjection = true)
+    {
+        // Reflection of function
+        try {
+            $reflectionFunction = new \ReflectionFunction($function);
+        } catch (\Exception $e) {
+            throw new ContainerException(sprintf('Error during reflection of function "%s"', $function), 0, $e);
+        }
+
+        // Dependency injection?
+        if ($dependencyInjection) {
+            try {
+                $arguments = $this->getDependencyInjectionParameters($reflectionFunction->getParameters(), $arguments);
+            } catch (ContainerExceptionInterface $e) {
+                throw new ContainerException(sprintf('Error during dependency injection of function "%s"', $function), 0, $e);
+            }
+        }
+
+        return $reflectionFunction->invokeArgs($arguments);
+    }
+
+    /**
+     * Get parameters ordered to inject.
+     *
+     * @param \ReflectionParameter[] $reflectionParameters
+     * @param array                  $arguments
+     *
+     * @return array Parameters (ordered)
+     * @throws \Psr\Container\ContainerExceptionInterface
+     */
+    public function getDependencyInjectionParameters(array $reflectionParameters, array $arguments = []): array
+    {
+        $parameters = [];
+
+        foreach ($reflectionParameters as $reflectionParameter) {
+            if ($reflectionParameter instanceof \ReflectionParameter) {
+                // Parameter given in configuration and waiting type is built in?
+                if (array_key_exists($reflectionParameter->getName(), $arguments)
+                    && !$this->isValidServiceConfiguration($arguments[$reflectionParameter->getName()])
+                    && (!$reflectionParameter->hasType() || $reflectionParameter->getType()->isBuiltin())) {
+                    $parameters[$reflectionParameter->getName()] = $arguments[$reflectionParameter->getName()];
+                } else {
+                    try {
+                        // Parameter is class?
+                        if (($reflectionParameter->hasType() && !$reflectionParameter->getType()->isBuiltin())
+                            || (array_key_exists($reflectionParameter->getName(), $arguments) && $this->isValidServiceConfiguration($arguments[$reflectionParameter->getName()]))) {
+                            // Argument is object? So service?
+                            if (array_key_exists($reflectionParameter->getName(), $arguments)
+                                && $this->isValidServiceConfiguration($arguments[$reflectionParameter->getName()])) {
+                                if (($subServiceConfiguration = $this->makeConfiguration($arguments[$reflectionParameter->getName()])) !== false) {
+                                    $parameters[$reflectionParameter->getName()] = $this->createService($subServiceConfiguration);
+                                } else {
+                                    throw new ContainerException(sprintf('Service "%s" has bad configuration', $reflectionParameter->getName()));
+                                }
+                            } else {
+                                // Get waiting service in configuration if available or declared class
+                                $waitingService = $arguments[$reflectionParameter->getName()] ?? $reflectionParameter->getType()->getName();
+
+                                $parameters[$reflectionParameter->getName()] = $this->get($waitingService);
+                            }
+                        } else {
+                            throw new ContainerException(sprintf('Missing "%s" parameter', $reflectionParameter->getName()));
+                        }
+                    } catch (\Exception $e) {
+                        if ($reflectionParameter->isDefaultValueAvailable()) {
+                            $parameters[$reflectionParameter->getName()] = $reflectionParameter->getDefaultValue();
+                        } else {
+                            if ($reflectionParameter->allowsNull()) {
+                                $parameters[$reflectionParameter->getName()] = null;
+                            } else {
+                                if ($e instanceof ContainerExceptionInterface) {
+                                    throw $e;
+                                } else {
+                                    throw new ContainerException(sprintf('Error during creation of dependencies with parameter "%s"', $reflectionParameter->getName()), 0, $e);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $parameters;
     }
 }
