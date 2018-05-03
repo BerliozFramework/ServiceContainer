@@ -12,23 +12,20 @@
 
 namespace Berlioz\ServiceContainer;
 
-
-use Psr\Container\ContainerInterface;
-
 /**
  * Describes a service container-aware instance.
  */
 trait ServiceContainerAwareTrait
 {
-    /** @var \Psr\Container\ContainerInterface Service container */
+    /** @var \Berlioz\ServiceContainer\ServiceContainer Service container */
     private $serviceContainer;
 
     /**
      * Get service container.
      *
-     * @return \Psr\Container\ContainerInterface|null
+     * @return \Berlioz\ServiceContainer\ServiceContainer|null
      */
-    public function getServiceContainer(): ?ContainerInterface
+    public function getServiceContainer(): ?ServiceContainer
     {
         return $this->serviceContainer;
     }
@@ -36,11 +33,11 @@ trait ServiceContainerAwareTrait
     /**
      * Set service container.
      *
-     * @param \Psr\Container\ContainerInterface $serviceContainer
+     * @param \Berlioz\ServiceContainer\ServiceContainer $serviceContainer
      *
      * @return static
      */
-    public function setServiceContainer(ContainerInterface $serviceContainer)
+    public function setServiceContainer(ServiceContainer $serviceContainer)
     {
         $this->serviceContainer = $serviceContainer;
 
