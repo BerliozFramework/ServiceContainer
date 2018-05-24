@@ -154,8 +154,12 @@ class ServiceContainer implements ContainerInterface
         }
 
         $classes = array_merge([ltrim($class, '\\')],
-                               class_parents($class, $autoload),
-                               class_implements($class, $autoload));
+                               $resultClassParents = @class_parents($class, $autoload),
+                               $resultClassImplements = @class_implements($class, $autoload));
+
+        if ($resultClassParents === false || $resultClassImplements === false) {
+            throw new ContainerException(sprintf('Unable to load service "%s", class does not exists', $class));
+        }
 
         return array_unique($classes);
     }
