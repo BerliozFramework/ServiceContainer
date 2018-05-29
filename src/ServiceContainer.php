@@ -293,30 +293,32 @@ class ServiceContainer implements ContainerInterface
         if (in_array($id, $this->initialization)) {
             throw new ContainerException(sprintf('Recursive call of service "%s"', $id));
         } else {
-            // Add service to currently initialization
-            $this->initialization[] = $id;
+            try {
+                // Add service to currently initialization
+                $this->initialization[] = $originalId = $id;
 
-            // Check if not already instanced?
-            if (isset($this->services[$id])) {
-                $service = $this->services[$id];
-            } else {
-                // Check if a config is available for service id
-                if (!empty($this->servicesConfiguration[$id])) {
-                    $service = $this->createService($this->servicesConfiguration[$id]);
+                // Check if not already instanced?
+                if (isset($this->services[$id])) {
+                    $service = $this->services[$id];
                 } else {
-                    // Check if service has alias
-                    if (!empty($this->classes[$id])) {
-                        $service = $this->get(reset($this->classes[$id]));
+                    // Check if a config is available for service id
+                    if (!empty($this->servicesConfiguration[$id])) {
+                        $service = $this->createService($this->servicesConfiguration[$id]);
                     } else {
-                        $id = $this->registerService($id);
-                        $service = $this->get($id);
+                        // Check if service has alias
+                        if (!empty($this->classes[$id])) {
+                            $service = $this->get(reset($this->classes[$id]));
+                        } else {
+                            $id = $this->registerService($id);
+                            $service = $this->get($id);
+                        }
                     }
                 }
-            }
-
-            // Delete service from currently initialization
-            if (($key = array_search($id, $this->initialization)) !== false) {
-                unset($this->initialization[$key]);
+            } finally {
+                // Delete service from currently initialization
+                if (($key = array_search($originalId, $this->initialization)) !== false) {
+                    unset($this->initialization[$key]);
+                }
             }
         }
 
