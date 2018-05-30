@@ -26,8 +26,18 @@ class Service1
         $this->param3 = $param3;
     }
 
+    public function increaseParam3(int $nb = 1)
+    {
+        $this->param3 += $nb;
+    }
+
     public function getParam1(): string
     {
         return $this->param1;
+    }
+
+    public function getParam3(): int
+    {
+        return $this->param3;
     }
 }

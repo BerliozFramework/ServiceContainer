@@ -15,14 +15,11 @@ namespace Berlioz\ServiceContainer;
 use Berlioz\ServiceContainer\Exception\ContainerException;
 use Berlioz\ServiceContainer\Exception\NotFoundException;
 use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\ContainerInterface;
 
-class ServiceContainer implements ContainerInterface
+class ServiceContainer implements ServiceContainerInterface
 {
     /** @var array Services constraints */
     private $constraints = [];
-    /** @var array Services configuration */
-    private $servicesConfiguration;
     /** @var array Classes */
     private $classes;
     /** @var array Services */
@@ -33,124 +30,103 @@ class ServiceContainer implements ContainerInterface
     /**
      * ServiceContainer constructor.
      *
-     * @param array|null $servicesConfiguration
+     * @param array $services
      *
      * @throws \Psr\Container\ContainerExceptionInterface
      */
-    public function __construct(?array $servicesConfiguration = null)
+    public function __construct(array $services = [])
     {
-        $this->servicesConfiguration = [];
         $this->classes = [];
         $this->services = [];
         $this->initialization = [];
 
         // Register me into services
-        $this->registerObjectAsService($this, 'ServiceContainer');
+        $this->register('ServiceContainer', $this);
 
-        if (!empty($servicesConfiguration)) {
-            $this->registerServices($servicesConfiguration);
+        // Register all services
+        $this->registerServices($services);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function register(string $alias, $class, array $arguments = [], array $calls = []): ServiceContainerInterface
+    {
+        try {
+            // Check validity of first argument
+            if (!(is_object($class) || is_string($class))) {
+                throw new ContainerException(sprintf('First argument must be a class name or an object, %s given', gettype($class)));
+            }
+
+            // Get class name of object
+            $object = null;
+            if (is_string($class)) {
+                $class = ltrim($class, '\\');
+
+                if (!class_exists($class)) {
+                    throw new NotFoundException(sprintf('Class "%s" does not exists', $class));
+                }
+            } else {
+                $object = $class;
+                $class = get_class($class);
+            }
+
+            // Check constraints
+            $this->checkConstraints($alias, $class);
+
+            // Associate all classes to the alias
+            foreach ($this->getAllClasses($class) as $aClass) {
+                $this->classes[$aClass][] = $alias;
+            }
+
+            // Associate alias to service object (null if not initialized) and configuration
+            $this->services[$alias] = ['object'    => $object,
+                                       'class'     => $class,
+                                       'arguments' => $arguments,
+                                       'calls'     => $calls];
+
+            return $this;
+        } catch (ContainerExceptionInterface $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            throw new ContainerException(sprintf('Unable to register service "%s"', $alias), 0, $e);
         }
     }
 
     /**
-     * Register object as service.
-     *
-     * @param object      $object
-     * @param string|null $alias
-     *
-     * @return string Name of service
-     * @throws \Berlioz\ServiceContainer\Exception\ContainerException
+     * @inheritdoc
      */
-    public function registerObjectAsService($object, string $alias = null)
+    public function registerServices(array $services): ServiceContainerInterface
     {
-        $className = get_class($object);
+        foreach ($services as $alias => $service) {
+            if (empty($service['class'])) {
+                throw new ContainerException(sprintf('Missing class in configuration of service "%s"', $alias));
+            }
 
-        $this->services[$alias ?? $className] = $object;
-
-        $this->associateClassToService($className, $alias ?? $className);
-
-        return $alias ?? $className;
-    }
-
-    /**
-     * Register services.
-     *
-     * @param array $servicesConfiguration
-     *
-     * @throws \Psr\Container\ContainerExceptionInterface
-     */
-    public function registerServices(array $servicesConfiguration)
-    {
-        foreach ($servicesConfiguration as $alias => $serviceConfiguration) {
-            $this->registerService($serviceConfiguration, $alias);
+            $this->register($alias,
+                            $service['class'],
+                            $service['arguments'] ?? [],
+                            $service['calls'] ?? []);
         }
-    }
 
-    /**
-     * Register service.
-     *
-     * Configuration must be a class name or an array describes the service:
-     *     [ 'alias'     => 'NameOfService',
-     *       'class'     => '\My\Class',
-     *       'arguments' => [ 'argument' => 'value' ] ]
-     *
-     * @param string|array $service
-     * @param string|null  $alias
-     *
-     * @return string Name of service
-     * @throws \Psr\Container\ContainerExceptionInterface
-     */
-    public function registerService($service, string $alias = null): string
-    {
-        if (($serviceConfiguration = $this->makeConfiguration($service)) !== false) {
-            $alias = $serviceConfiguration['alias'] ?? $alias ?? $serviceConfiguration['class'];
-            $serviceConfiguration['alias'] = $alias;
-
-            $this->associateClassToService($serviceConfiguration['class'], $alias, true);
-
-            $this->servicesConfiguration[$alias] = $serviceConfiguration;
-
-            return $alias;
-        } else {
-            throw new ContainerException(sprintf('Bad configuration format for service named "%s", must be class name or array', $alias ?? (string) $serviceConfiguration['class'] ?? 'Unknown'));
-        }
-    }
-
-    /**
-     * Associate class name to a service.
-     *
-     * @param string $className Class name
-     * @param string $alias     Alias of service
-     * @param bool   $autoload  Auto load
-     *
-     * @throws \Berlioz\ServiceContainer\Exception\ContainerException
-     */
-    private function associateClassToService(string $className, string $alias, bool $autoload = true)
-    {
-        foreach ($this->getAllClasses($className, $autoload) as $aClass) {
-            $this->classes[$aClass][] = $alias;
-            $this->classes[$aClass] = array_unique($this->classes[$aClass]);
-        }
+        return $this;
     }
 
     /**
      * Get all classes of a class (herself, parents classes and interfaces).
      *
-     * @param string|object $class    Class name
+     * @param string|object $object   Class name
      * @param bool          $autoload Auto load
      *
      * @return array
      * @throws \Berlioz\ServiceContainer\Exception\ContainerException
      */
-    private function getAllClasses($class, bool $autoload = true): array
+    private function getAllClasses($object, bool $autoload = true): array
     {
-        // Check validity of first argument
-        if (!(is_object($class) || is_string($class))) {
-            throw new ContainerException(sprintf('First argument must be a class name or an object, %s given', gettype($class)));
-        }
-
-        if (is_object($class)) {
-            $class = get_class($class);
+        if (is_object($object)) {
+            $class = get_class($object);
+        } else {
+            $class = $object;
         }
 
         $classes = array_merge([ltrim($class, '\\')],
@@ -158,92 +134,37 @@ class ServiceContainer implements ContainerInterface
                                $resultClassImplements = @class_implements($class, $autoload));
 
         if ($resultClassParents === false || $resultClassImplements === false) {
-            throw new ContainerException(sprintf('Unable to load service "%s", class does not exists', $class));
+            throw new ContainerException(sprintf('Unable to get all classes of class "%s"', $class));
         }
 
         return array_unique($classes);
     }
 
-    /**
-     * Make configuration.
-     *
-     * @param string|array $service
-     *
-     * @return array|false
-     * @throws \Berlioz\ServiceContainer\Exception\ContainerException
-     */
-    private function makeConfiguration($service)
-    {
-        $configuration = ['alias' => null, 'class' => null, 'arguments' => []];
-
-        if (is_string($service)) {
-            if (class_exists($service)) {
-                $configuration['class'] = $service;
-            } else {
-                throw new ContainerException(sprintf('Class "%s" does not exist', $service));
-            }
-        } else {
-            if (is_array($service) && !empty($service['class'])) {
-                $configuration['alias'] = $service['alias'] ?? null;
-                $configuration['class'] = ltrim($service['class'], '\\');
-                $configuration['arguments'] = (array) ($service['arguments'] ?? []);
-            } else {
-                return false;
-            }
-        }
-
-        return $configuration;
-    }
+    ///////////////////
+    /// CONSTRAINTS ///
+    ///////////////////
 
     /**
-     * Create service from configuration.
+     * Check constraints for a service alias.
      *
-     * @param array $configuration
-     *
-     * @return object
-     * @throws \Psr\Container\ContainerExceptionInterface
-     */
-    private function createService(array $configuration)
-    {
-        // Get service class & name
-        $serviceClass = $configuration['class'];
-        $serviceAlias = $configuration['alias'] ?? $serviceClass;
-        $serviceArguments = $configuration['arguments'];
-
-        // Check constraints
-        $this->checkConstraints($serviceAlias, $serviceClass);
-
-        // Construct service
-        $this->services[$serviceAlias] = $this->newInstanceOf($serviceClass, $serviceArguments);
-
-        $this->associateClassToService($serviceClass, $serviceAlias);
-
-        return $this->services[$serviceAlias];
-    }
-
-    /**
-     * Check constraints for a service name.
-     *
-     * @param string $name  Name of service
+     * @param string $alias Alias of service
      * @param string $class Class name of service
      *
      * @return void
      * @throws \Berlioz\ServiceContainer\Exception\ContainerException
      */
-    private function checkConstraints(string $name, string $class): void
+    private function checkConstraints(string $alias, string $class): void
     {
         // Check constraint
-        if (isset($this->constraints[$name])) {
-            if (!is_a($class, $this->constraints[$name], true)) {
-                throw new ContainerException(sprintf('Service "%s" must implements "%s" class', $name, $this->constraints[$name]));
+        if (isset($this->constraints[$alias])) {
+            if (!is_a($class, $this->constraints[$alias], true)) {
+                throw new ContainerException(sprintf('Service "%s" must implements "%s" class', $alias, $this->constraints[$alias]));
             }
         }
     }
 
     /**
-     * Get constraints.
-     *
-     * @return array
+     * @inheritdoc
      */
     public function getConstraints(): array
     {
@@ -251,11 +172,7 @@ class ServiceContainer implements ContainerInterface
     }
 
     /**
-     * Set constraints.
-     *
-     * @param array $constraints
-     *
-     * @return \Berlioz\ServiceContainer\ServiceContainer
+     * @inheritdoc
      */
     public function setConstraints(array $constraints): ServiceContainer
     {
@@ -265,19 +182,18 @@ class ServiceContainer implements ContainerInterface
     }
 
     /**
-     * Set constraint for service.
-     *
-     * @param string $serviceName Service name
-     * @param string $class       Class name
-     *
-     * @return \Berlioz\ServiceContainer\ServiceContainer
+     * @inheritdoc
      */
-    public function addConstraint(string $serviceName, string $class): ServiceContainer
+    public function addConstraint(string $alias, string $class): ServiceContainer
     {
-        $this->constraints[$serviceName] = $class;
+        $this->constraints[$alias] = $class;
 
         return $this;
     }
+
+    ///////////////////////////
+    /// CONTAINER INTERFACE ///
+    ///////////////////////////
 
     /**
      * Finds an entry of the container by its identifier and returns it.
@@ -297,21 +213,30 @@ class ServiceContainer implements ContainerInterface
                 // Add service to currently initialization
                 $this->initialization[] = $originalId = $id;
 
-                // Check if not already instanced?
+                // Check if service registered?
                 if (isset($this->services[$id])) {
-                    $service = $this->services[$id];
-                } else {
-                    // Check if a config is available for service id
-                    if (!empty($this->servicesConfiguration[$id])) {
-                        $service = $this->createService($this->servicesConfiguration[$id]);
+                    // Get service already initialized
+                    if (!is_null($this->services[$id]['object'])) {
+                        $service = $this->services[$id]['object'];
                     } else {
-                        // Check if service has alias
-                        if (!empty($this->classes[$id])) {
-                            $service = $this->get(reset($this->classes[$id]));
-                        } else {
-                            $id = $this->registerService($id);
-                            $service = $this->get($id);
+                        // Create service
+                        $service = $this->newInstanceOf($this->services[$id]['class'], $this->services[$id]['arguments']);
+                        $this->services[$id]['object'] = $service;
+
+                        // Calls
+                        foreach ($this->services[$id]['calls'] as $call) {
+                            $this->invokeMethod($service, $call['method'], $call['arguments'] ?? []);
                         }
+                    }
+                } else {
+                    // Check if service has alias
+                    if (!empty($this->classes[$id])) {
+                        // Get first alias
+                        $service = $this->get(reset($this->classes[$id]));
+                    } else {
+                        // Register new service, thrown Exception if not found
+                        $this->register($id, $id);
+                        $service = $this->get($id);
                     }
                 }
             } finally {
@@ -338,21 +263,17 @@ class ServiceContainer implements ContainerInterface
      */
     public function has($id): bool
     {
-        return isset($this->servicesConfiguration[$id])
-               || isset($this->services[$id])
+        return isset($this->services[$id])
                || isset($this->classes[$id])
                || class_exists($id);
     }
 
+    ////////////////////////////
+    /// DEPENDENCY INJECTION ///
+    ////////////////////////////
+
     /**
-     * Create new instance of a class.
-     *
-     * @param object|string $class               Class name or object
-     * @param array         $arguments           Arguments
-     * @param bool          $dependencyInjection Dependency injection? (default: true)
-     *
-     * @return mixed
-     * @throws \Berlioz\ServiceContainer\Exception\ContainerException
+     * @inheritdoc
      */
     public function newInstanceOf($class, array $arguments = [], bool $dependencyInjection = true)
     {
@@ -382,15 +303,7 @@ class ServiceContainer implements ContainerInterface
     }
 
     /**
-     * Invocation of method.
-     *
-     * @param object $object              Object
-     * @param string $method              Method name
-     * @param array  $arguments           Arguments
-     * @param bool   $dependencyInjection Dependency injection? (default: true)
-     *
-     * @return mixed
-     * @throws \Berlioz\ServiceContainer\Exception\ContainerException
+     * @inheritdoc
      */
     public function invokeMethod($object, string $method, array $arguments = [], bool $dependencyInjection = true)
     {
@@ -423,14 +336,7 @@ class ServiceContainer implements ContainerInterface
     }
 
     /**
-     * Invocation of function.
-     *
-     * @param string $function            Function name
-     * @param array  $arguments           Arguments
-     * @param bool   $dependencyInjection Dependency injection? (default: true)
-     *
-     * @return mixed
-     * @throws \Berlioz\ServiceContainer\Exception\ContainerException
+     * @inheritdoc
      */
     public function invokeFunction(string $function, array $arguments = [], bool $dependencyInjection = true)
     {
@@ -462,7 +368,7 @@ class ServiceContainer implements ContainerInterface
      * @return array Parameters (ordered)
      * @throws \Psr\Container\ContainerExceptionInterface
      */
-    public function getDependencyInjectionParameters(array $reflectionParameters, array $arguments = []): array
+    private function getDependencyInjectionParameters(array $reflectionParameters, array $arguments = []): array
     {
         $parameters = [];
 
@@ -475,6 +381,8 @@ class ServiceContainer implements ContainerInterface
 
                 if ($this->has($subServiceName)) {
                     $argument = $this->get($subServiceName);
+                } else {
+                    throw new NotFoundException(sprintf('Service "%s" not found', $subServiceName));
                 }
             }
 
@@ -499,14 +407,26 @@ class ServiceContainer implements ContainerInterface
                     // Parameter is class?
                     if ($reflectionParameter->hasType() && !$reflectionParameter->getType()->isBuiltin()) {
                         // Service exists?
-                        if ($this->has($reflectionParameter->getType()->getName())) {
-                            $parameterValue = $this->get($reflectionParameter->getType()->getName());
+                        if (!empty($this->classes[$reflectionParameter->getType()->getName()])) {
+                            $classes = $this->classes[$reflectionParameter->getType()->getName()];
+
+                            if (in_array($reflectionParameter->getName(), $classes)) {
+                                $parameterValue = $this->get($reflectionParameter->getName());
+                            } else {
+                                $parameterValue = $this->get(reset($classes));
+                            }
                             $parameterValueFound = true;
                         } else {
                             // Present in arguments?
                             if (isset($argumentsClass[$reflectionParameter->getType()->getName()])) {
                                 $parameterValue = $arguments[reset($argumentsClass[$reflectionParameter->getType()->getName()])];
                                 $parameterValueFound = true;
+                            } else {
+                                // Try to create argument object
+                                if ($this->has($reflectionParameter->getType()->getName())) {
+                                    $parameterValue = $this->get($reflectionParameter->getType()->getName());
+                                    $parameterValueFound = true;
+                                }
                             }
                         }
                     }

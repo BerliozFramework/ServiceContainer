@@ -13,7 +13,6 @@
 namespace Berlioz\ServiceContainer\Tests;
 
 use Berlioz\ServiceContainer\Exception\ContainerException;
-use Berlioz\ServiceContainer\Exception\NotFoundException;
 use Berlioz\ServiceContainer\ServiceContainer;
 use Berlioz\ServiceContainer\Tests\files\Service1;
 use Berlioz\ServiceContainer\Tests\files\Service2;
@@ -33,7 +32,15 @@ class ServiceContainerTest extends TestCase
       "param1": "test",
       "param2": "test",
       "param3": 1 
-    }
+    },
+    "calls": [
+      {
+        "method": "increaseParam3",
+        "arguments": {
+          "nb": 5
+        }
+      }
+    ]
   },
   "aliasService1X": {
     "class": "\\Berlioz\\ServiceContainer\\Tests\\files\\Service1",
@@ -70,7 +77,7 @@ EOD;
     public function testRegisterObjectAsService()
     {
         $serviceContainer = new ServiceContainer;
-        $serviceContainer->registerObjectAsService($service = new Service1('test', 'test2', 1), 'alias1');
+        $serviceContainer->register('alias1', $service = new Service1('test', 'test2', 1));
         $this->assertTrue($serviceContainer->has('alias1'));
         $this->assertEquals($service, $serviceContainer->get('alias1'));
         $this->assertTrue($serviceContainer->has('alias1'));
@@ -97,10 +104,17 @@ EOD;
         $config = $this->getConfig();
 
         $serviceContainer = new ServiceContainer;
-        $serviceContainer->registerService($config['aliasService1'], 'service');
+        $serviceContainer->register('service', $config['aliasService1']['class'], $config['aliasService1']['arguments']);
         $this->assertInstanceOf('\Berlioz\ServiceContainer\Tests\files\Service1', $service = $serviceContainer->get('service'));
         $this->assertEquals($service, $serviceContainer->get('service'));
         $this->assertTrue($serviceContainer->has('service'));
+    }
+
+    public function testCallsService()
+    {
+        $serviceContainer = new ServiceContainer($this->getConfig());
+        $service1 = $serviceContainer->get('aliasService1');
+        $this->assertEquals(6, $service1->getParam3());
     }
 
     public function testRecursivelyServices()
@@ -112,84 +126,6 @@ EOD;
 
         $this->assertNotEquals($service1, $serviceX->getParam2());
         $this->assertEquals($service1X, $serviceX->getParam2());
-    }
-
-    /**
-     * @throws \Psr\Container\ContainerExceptionInterface
-     * @throws \ReflectionException
-     */
-    public function testMakeConfiguration()
-    {
-        $serviceContainer = new ServiceContainer;
-        $reflection = new \ReflectionClass($serviceContainer);
-        $method = $reflection->getMethod('makeConfiguration');
-        $method->setAccessible(true);
-
-        $result = $method->invokeArgs($serviceContainer, [json_decode(<<<'EOD'
-{
-  "aliasService1": {
-    "arguments": {
-      "param1": "test",
-      "param2": "test",
-      "param3": 1 
-    }
-  }
-}
-EOD
-            , true)]);
-        $this->assertFalse($result);
-
-        $result = $method->invokeArgs($serviceContainer, $this->getConfig());
-        $this->assertNotFalse($result);
-    }
-
-    /**
-     * @throws \Psr\Container\ContainerExceptionInterface
-     * @throws \ReflectionException
-     */
-    public function testCreateService()
-    {
-        $json = <<<'EOD'
-{
-  "class": "\\Berlioz\\ServiceContainer\\Tests\\files\\Service1",
-  "arguments": {
-    "param1": "test",
-    "param2": "test",
-    "param3": 1 
-  }
-}
-EOD;
-        $serviceContainer = new ServiceContainer;
-        $reflection = new \ReflectionClass($serviceContainer);
-        $method = $reflection->getMethod('createService');
-        $method->setAccessible(true);
-
-        $result = $method->invokeArgs($serviceContainer, [json_decode($json, true)]);
-        $this->assertInstanceOf('\Berlioz\ServiceContainer\Tests\files\Service1', $result);
-    }
-
-    /**
-     * @throws \Psr\Container\ContainerExceptionInterface
-     * @throws \ReflectionException
-     */
-    public function testCreateServiceException()
-    {
-        $this->expectException(NotFoundException::class);
-        $json = <<<'EOD'
-{
-  "class": "\\Berlioz\\ServiceContainer\\Tests\\files\\Service666",
-  "arguments": {
-    "param1": "test",
-    "param2": "test",
-    "param3": 1 
-  }
-}
-EOD;
-        $serviceContainer = new ServiceContainer;
-        $reflection = new \ReflectionClass($serviceContainer);
-        $method = $reflection->getMethod('createService');
-        $method->setAccessible(true);
-        $method->invokeArgs($serviceContainer, [json_decode($json, true)]);
     }
 
     /**
@@ -223,6 +159,20 @@ EOD;
                                                      'param3' => 3,
                                                      'param4' => 'test']);
         $this->assertInstanceOf(Service3::class, $service);
+    }
+
+    /**
+     * @throws \Psr\Container\ContainerExceptionInterface
+     */
+    public function testNewInstanceOfWithNotNamedParameters()
+    {
+        $service1 = new Service1('param1', 'param2', 1);
+        $serviceContainer = new ServiceContainer;
+        $service = $serviceContainer->newInstanceOf(Service2::class,
+                                                    ['param1'   => 'test',
+                                                     'aService' => $service1]);
+        $this->assertInstanceOf(Service2::class, $service);
+        $this->assertEquals($service1, $service->getParam2());
     }
 
     /**
