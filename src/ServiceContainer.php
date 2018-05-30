@@ -30,15 +30,19 @@ class ServiceContainer implements ServiceContainerInterface
     /**
      * ServiceContainer constructor.
      *
-     * @param array $services
+     * @param array $services    Services
+     * @param array $constraints Constraints
      *
      * @throws \Psr\Container\ContainerExceptionInterface
      */
-    public function __construct(array $services = [])
+    public function __construct(array $services = [], array $constraints = [])
     {
         $this->classes = [];
         $this->services = [];
         $this->initialization = [];
+
+        // Set constraints
+        $this->setConstraints($constraints);
 
         // Register me into services
         $this->register('ServiceContainer', $this);
