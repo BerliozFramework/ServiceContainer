@@ -240,18 +240,30 @@ class ServiceContainer implements ServiceContainerInterface
                     } else {
                         // Register new service, thrown Exception if not found
                         $this->register($id, $id);
+                        $this->finishInitialization($originalId);
+
                         $service = $this->get($id);
                     }
                 }
             } finally {
-                // Delete service from currently initialization
-                if (($key = array_search($originalId, $this->initialization)) !== false) {
-                    unset($this->initialization[$key]);
-                }
+                $this->finishInitialization($originalId);
             }
         }
 
         return $service;
+    }
+
+    /**
+     * Finish initialization of service.
+     *
+     * @param string $id
+     */
+    private function finishInitialization(string $id)
+    {
+        // Delete service from currently initialization
+        if (($key = array_search($id, $this->initialization)) !== false) {
+            unset($this->initialization[$key]);
+        }
     }
 
     /**
