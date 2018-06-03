@@ -280,8 +280,7 @@ class ServiceContainer implements ServiceContainerInterface
     public function has($id): bool
     {
         return isset($this->services[$id])
-               || isset($this->classes[$id])
-               || class_exists($id);
+               || isset($this->classes[$id]);
     }
 
     ////////////////////////////
