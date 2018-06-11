@@ -17,6 +17,7 @@ use Berlioz\ServiceContainer\ServiceContainer;
 use Berlioz\ServiceContainer\Tests\files\Service1;
 use Berlioz\ServiceContainer\Tests\files\Service2;
 use Berlioz\ServiceContainer\Tests\files\Service3;
+use Berlioz\ServiceContainer\Tests\files\Service4;
 use Berlioz\ServiceContainer\Tests\files\ServiceInterface;
 use PHPUnit\Framework\TestCase;
 
@@ -199,6 +200,21 @@ EOD;
         $serviceContainer->newInstanceOf(Service3::class,
                                          ['param1' => 'test',
                                           'param4' => 'test2']);
+    }
+
+    /**
+     * @throws \Psr\Container\ContainerExceptionInterface
+     */
+    public function testNewInstanceOf_withoutConstructor()
+    {
+        $serviceContainer = new ServiceContainer;
+        $service = $serviceContainer->newInstanceOf(Service4::class,
+                                                    ['param1' => 'test',
+                                                     'param4' => 'test2']);
+        $this->assertInstanceOf(Service4::class, $service);
+
+        $service = $serviceContainer->newInstanceOf(Service4::class);
+        $this->assertInstanceOf(Service4::class, $service);
     }
 
     /**

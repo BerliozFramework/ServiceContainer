@@ -303,9 +303,9 @@ class ServiceContainer implements ServiceContainerInterface
             throw new ContainerException(sprintf('Error during reflection: %s', $e->getMessage()), 0, $e);
         }
 
-        // Dependency injection?
-        if ($dependencyInjection) {
-            if (!is_null($constructor = $reflectionClass->getConstructor())) {
+        if (!is_null($constructor = $reflectionClass->getConstructor())) {
+            // Dependency injection?
+            if ($dependencyInjection) {
                 try {
                     $arguments = $this->getDependencyInjectionParameters($constructor->getParameters(), $arguments);
                 } catch (ContainerExceptionInterface $e) {
@@ -314,7 +314,11 @@ class ServiceContainer implements ServiceContainerInterface
             }
         }
 
-        return $reflectionClass->newInstanceArgs($arguments);
+        if (is_null($constructor)) {
+            return $reflectionClass->newInstanceWithoutConstructor();
+        } else {
+            return $reflectionClass->newInstanceArgs($arguments);
+        }
     }
 
     /**
