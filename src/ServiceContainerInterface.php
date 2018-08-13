@@ -74,41 +74,4 @@ interface ServiceContainerInterface extends ContainerInterface
      * @return \Berlioz\ServiceContainer\ServiceContainer
      */
     public function addConstraint(string $alias, string $class): ServiceContainer;
-
-    /**
-     * Create new instance of a class.
-     *
-     * @param object|string $class               Class name or object
-     * @param array         $arguments           Arguments
-     * @param bool          $dependencyInjection Dependency injection? (default: true)
-     *
-     * @return mixed
-     * @throws \Berlioz\ServiceContainer\Exception\ContainerException
-     */
-    public function newInstanceOf($class, array $arguments = [], bool $dependencyInjection = true);
-
-    /**
-     * Invocation of method.
-     *
-     * @param object $object              Object
-     * @param string $method              Method name
-     * @param array  $arguments           Arguments
-     * @param bool   $dependencyInjection Dependency injection? (default: true)
-     *
-     * @return mixed
-     * @throws \Berlioz\ServiceContainer\Exception\ContainerException
-     */
-    public function invokeMethod($object, string $method, array $arguments = [], bool $dependencyInjection = true);
-
-    /**
-     * Invocation of function.
-     *
-     * @param string $function            Function name
-     * @param array  $arguments           Arguments
-     * @param bool   $dependencyInjection Dependency injection? (default: true)
-     *
-     * @return mixed
-     * @throws \Berlioz\ServiceContainer\Exception\ContainerException
-     */
-    public function invokeFunction(string $function, array $arguments = [], bool $dependencyInjection = true);
 }

@@ -16,8 +16,6 @@ use Berlioz\ServiceContainer\Exception\ContainerException;
 use Berlioz\ServiceContainer\ServiceContainer;
 use Berlioz\ServiceContainer\Tests\files\Service1;
 use Berlioz\ServiceContainer\Tests\files\Service2;
-use Berlioz\ServiceContainer\Tests\files\Service3;
-use Berlioz\ServiceContainer\Tests\files\Service4;
 use Berlioz\ServiceContainer\Tests\files\ServiceInterface;
 use PHPUnit\Framework\TestCase;
 
@@ -146,87 +144,5 @@ EOD;
         $this->expectException(ContainerException::class);
 
         $method->invokeArgs($serviceContainer, ['service', Service1::class]);
-    }
-
-    /**
-     * @throws \Psr\Container\ContainerExceptionInterface
-     */
-    public function testNewInstanceOf()
-    {
-        $serviceContainer = new ServiceContainer;
-        $service = $serviceContainer->newInstanceOf(Service3::class,
-                                                    ['param1' => 'test',
-                                                     'param2' => 'test',
-                                                     'param3' => 3,
-                                                     'param4' => 'test']);
-        $this->assertInstanceOf(Service3::class, $service);
-    }
-
-    /**
-     * @throws \Psr\Container\ContainerExceptionInterface
-     */
-    public function testNewInstanceOfWithNotNamedParameters()
-    {
-        $service1 = new Service1('param1', 'param2', 1);
-        $serviceContainer = new ServiceContainer;
-        $service = $serviceContainer->newInstanceOf(Service2::class,
-                                                    ['param1'   => 'test',
-                                                     'aService' => $service1]);
-        $this->assertInstanceOf(Service2::class, $service);
-        $this->assertEquals($service1, $service->getParam2());
-    }
-
-    /**
-     * @throws \Psr\Container\ContainerExceptionInterface
-     */
-    public function testNewInstanceOf_optionalParameters()
-    {
-        $serviceContainer = new ServiceContainer;
-        $service = $serviceContainer->newInstanceOf(Service3::class,
-                                                    ['param1' => 'test',
-                                                     'param2' => 'test']);
-        $this->assertInstanceOf(Service3::class, $service);
-        $this->assertNull($service->param3);
-        $this->assertEquals('test', $service->param4);
-    }
-
-    /**
-     * @throws \Psr\Container\ContainerExceptionInterface
-     */
-    public function testNewInstanceOf_missingParameter()
-    {
-        $this->expectException(ContainerException::class);
-        $serviceContainer = new ServiceContainer;
-        $serviceContainer->newInstanceOf(Service3::class,
-                                         ['param1' => 'test',
-                                          'param4' => 'test2']);
-    }
-
-    /**
-     * @throws \Psr\Container\ContainerExceptionInterface
-     */
-    public function testNewInstanceOf_withoutConstructor()
-    {
-        $serviceContainer = new ServiceContainer;
-        $service = $serviceContainer->newInstanceOf(Service4::class,
-                                                    ['param1' => 'test',
-                                                     'param4' => 'test2']);
-        $this->assertInstanceOf(Service4::class, $service);
-
-        $service = $serviceContainer->newInstanceOf(Service4::class);
-        $this->assertInstanceOf(Service4::class, $service);
-    }
-
-    /**
-     * @throws \Psr\Container\ContainerExceptionInterface
-     */
-    public function testInvokeMethod()
-    {
-        $serviceContainer = new ServiceContainer($this->getConfig());
-        $service = $serviceContainer->get(Service2::class);
-        $result = $serviceContainer->invokeMethod($service,
-                                                  'test',
-                                                  ['param' => ($str = 'toto')]);
-        $this->assertEquals(sprintf('It\'s a test "%s"', $str), $result);
     }
 }

@@ -12,8 +12,6 @@
 
 namespace Berlioz\ServiceContainer\Exception;
 
-use Psr\Container\ContainerExceptionInterface;
-
-class ContainerException extends \Exception implements ContainerExceptionInterface
+class ClassIndexException extends ContainerException
 {
 }

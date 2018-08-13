@@ -16,12 +16,14 @@ use Berlioz\ServiceContainer\Exception\ContainerException;
 use Berlioz\ServiceContainer\Exception\NotFoundException;
 use Psr\Container\ContainerExceptionInterface;
 
-class ServiceContainer implements ServiceContainerInterface
+class ServiceContainer implements ServiceContainerInterface, \Serializable
 {
-    /** @var array Services constraints */
-    private $constraints = [];
+    /** @var \Berlioz\ServiceContainer\Instantiator Instantiator */
+    private $instantiator;
     /** @var array Classes */
     private $classes;
+    /** @var array Services constraints */
+    private $constraints = [];
     /** @var array Services */
     private $services;
     /** @var array Initialization */
@@ -30,13 +32,16 @@ class ServiceContainer implements ServiceContainerInterface
     /**
      * ServiceContainer constructor.
      *
-     * @param array $services    Services
-     * @param array $constraints Constraints
-     *
-     * @throws \Psr\Container\ContainerExceptionInterface
+     * @param array                                       $services     Services
+     * @param array                                       $constraints  Constraints
+     * @param \Berlioz\ServiceContainer\Instantiator|null $instantiator Instantiator
      */
-    public function __construct(array $services = [], array $constraints = [])
+    public function __construct(array $services = [], array $constraints = [], ?Instantiator $instantiator = null)
     {
+        if (!is_null($instantiator)) {
+            $this->setInstantiator($instantiator);
+        }
+
         $this->classes = [];
         $this->services = [];
         $this->initialization = [];
@@ -50,6 +55,66 @@ class ServiceContainer implements ServiceContainerInterface
         // Register all services
         $this->registerServices($services);
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function serialize(): string
+    {
+        return serialize(['classIndex'  => $this->getInstantiator()->getClassIndex(),
+                          'classes'     => $this->classes,
+                          'constraints' => $this->constraints]);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function unserialize($serialized)
+    {
+        $tmpUnserialized = unserialize($serialized);
+
+        if (!empty($tmpUnserialized['classIndex'])) {
+            $this->getInstantiator()->setClassIndex($tmpUnserialized['classIndex']);
+        }
+        $this->classes = $tmpUnserialized['classes'];
+        $this->constraints = $tmpUnserialized['constraints'];
+    }
+
+    ////////////////////
+    /// INSTANTIATOR ///
+    ////////////////////
+
+    /**
+     * Get instantiator.
+     *
+     * @return \Berlioz\ServiceContainer\Instantiator
+     */
+    public function getInstantiator(): Instantiator
+    {
+        if (is_null($this->instantiator)) {
+            $this->instantiator = new Instantiator(null, $this);
+        }
+
+        return $this->instantiator;
+    }
+
+    /**
+     * Set instantiator.
+     *
+     * @param \Berlioz\ServiceContainer\Instantiator $instantiator
+     *
+     * @return static
+     */
+    public function setInstantiator(Instantiator $instantiator): ServiceContainer
+    {
+        $this->instantiator = $instantiator;
+
+        return $this;
+    }
+
+    ////////////////////////////////
+    /// REGISTRATION OF SERVICES ///
+    ////////////////////////////////
 
     /**
      * @inheritdoc
@@ -79,7 +144,7 @@ class ServiceContainer implements ServiceContainerInterface
             $this->checkConstraints($alias, $class);
 
             // Associate all classes to the alias
-            foreach ($this->getAllClasses($class) as $aClass) {
+            foreach ($this->getInstantiator()->getClassIndex()->getAllClasses($class) as $aClass) {
                 $this->classes[$aClass][] = $alias;
             }
 
@@ -116,37 +181,9 @@ class ServiceContainer implements ServiceContainerInterface
         return $this;
     }
 
-    /**
-     * Get all classes of a class (herself, parents classes and interfaces).
-     *
-     * @param string|object $object   Class name
-     * @param bool          $autoload Auto load
-     *
-     * @return array
-     * @throws \Berlioz\ServiceContainer\Exception\ContainerException
-     */
-    private function getAllClasses($object, bool $autoload = true): array
-    {
-        if (is_object($object)) {
-            $class = get_class($object);
-        } else {
-            $class = $object;
-        }
-
-        $classes = array_merge([ltrim($class, '\\')],
-                               $resultClassParents = @class_parents($class, $autoload),
-                               $resultClassImplements = @class_implements($class, $autoload));
-
-        if ($resultClassParents === false || $resultClassImplements === false) {
-            throw new ContainerException(sprintf('Unable to get all classes of class "%s"', $class));
-        }
-
-        return array_unique($classes);
-    }
-
-    ///////////////////
-    /// CONSTRAINTS ///
-    ///////////////////
+    ///////////////////////////////
+    /// CONSTRAINTS OF SERVICES ///
+    ///////////////////////////////
 
     /**
      * Check constraints for a service alias.
@@ -224,12 +261,12 @@ class ServiceContainer implements ServiceContainerInterface
                         $service = $this->services[$id]['object'];
                     } else {
                         // Create service
-                        $service = $this->newInstanceOf($this->services[$id]['class'], $this->services[$id]['arguments']);
+                        $service = $this->getInstantiator()->newInstanceOf($this->services[$id]['class'], $this->services[$id]['arguments']);
                         $this->services[$id]['object'] = $service;
 
                         // Calls
                         foreach ($this->services[$id]['calls'] as $call) {
-                            $this->invokeMethod($service, $call['method'], $call['arguments'] ?? []);
+                            $this->getInstantiator()->invokeMethod($service, $call['method'], $call['arguments'] ?? []);
                         }
                     }
                 } else {
@@ -281,193 +318,5 @@ class ServiceContainer implements ServiceContainerInterface
     {
         return isset($this->services[$id])
                || isset($this->classes[$id]);
-    }
-
-    ////////////////////////////
-    /// DEPENDENCY INJECTION ///
-    ////////////////////////////
-
-    /**
-     * @inheritdoc
-     */
-    public function newInstanceOf($class, array $arguments = [], bool $dependencyInjection = true)
-    {
-        // Reflection of class
-        try {
-            $reflectionClass = new \ReflectionClass($class);
-        } catch (\Exception $e) {
-            if (!class_exists($class)) {
-                throw new NotFoundException(sprintf('Class "%s" does not exists', $class), 0, $e);
-            }
-
-            throw new ContainerException(sprintf('Error during reflection: %s', $e->getMessage()), 0, $e);
-        }
-
-        if (!is_null($constructor = $reflectionClass->getConstructor())) {
-            // Dependency injection?
-            if ($dependencyInjection) {
-                try {
-                    $arguments = $this->getDependencyInjectionParameters($constructor->getParameters(), $arguments);
-                } catch (ContainerExceptionInterface $e) {
-                    throw new ContainerException(sprintf('Error during dependency injection of class "%s"', $class), 0, $e);
-                }
-            }
-        }
-
-        if (is_null($constructor)) {
-            return $reflectionClass->newInstanceWithoutConstructor();
-        } else {
-            return $reflectionClass->newInstanceArgs($arguments);
-        }
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function invokeMethod($object, string $method, array $arguments = [], bool $dependencyInjection = true)
-    {
-        // Check validity of first argument
-        if (!is_object($object)) {
-            throw new ContainerException(sprintf('First argument must be a valid object, %s given', gettype($object)));
-        }
-
-        // Reflection of method
-        try {
-            $reflectionMethod = new \ReflectionMethod($object, $method);
-        } catch (\Exception $e) {
-            if (!method_exists($object, $method)) {
-                throw new NotFoundException(sprintf('Method "%s::%s" does not exists', get_class($object), $method), 0, $e);
-            }
-
-            throw new ContainerException(sprintf('Error during reflection: %s', $e->getMessage()), 0, $e);
-        }
-
-        // Dependency injection?
-        if ($dependencyInjection) {
-            try {
-                $arguments = $this->getDependencyInjectionParameters($reflectionMethod->getParameters(), $arguments);
-            } catch (ContainerExceptionInterface $e) {
-                throw new ContainerException(sprintf('Error during dependency injection of method "%s::%s"', get_class($object), $method), 0, $e);
-            }
-        }
-
-        return $reflectionMethod->invokeArgs($object, $arguments);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function invokeFunction(string $function, array $arguments = [], bool $dependencyInjection = true)
-    {
-        // Reflection of function
-        try {
-            $reflectionFunction = new \ReflectionFunction($function);
-        } catch (\Exception $e) {
-            throw new ContainerException(sprintf('Error during reflection of function "%s"', $function), 0, $e);
-        }
-
-        // Dependency injection?
-        if ($dependencyInjection) {
-            try {
-                $arguments = $this->getDependencyInjectionParameters($reflectionFunction->getParameters(), $arguments);
-            } catch (ContainerExceptionInterface $e) {
-                throw new ContainerException(sprintf('Error during dependency injection of function "%s"', $function), 0, $e);
-            }
-        }
-
-        return $reflectionFunction->invokeArgs($arguments);
-    }
-
-    /**
-     * Get parameters ordered to inject.
-     *
-     * @param \ReflectionParameter[] $reflectionParameters
-     * @param array                  $arguments
-     *
-     * @return array Parameters (ordered)
-     * @throws \Psr\Container\ContainerExceptionInterface
-     */
-    private function getDependencyInjectionParameters(array $reflectionParameters, array $arguments = []): array
-    {
-        $parameters = [];
-
-        // Treat arguments
-        $argumentsClass = [];
-        foreach ($arguments as $name => &$argument) {
-            // Service recursively
-            if (is_string($argument) && substr($argument, 0, 1) == '@') {
-                $subServiceName = substr($argument, 1);
-
-                if ($this->has($subServiceName)) {
-                    $argument = $this->get($subServiceName);
-                } else {
-                    throw new NotFoundException(sprintf('Service "%s" not found', $subServiceName));
-                }
-            }
-
-            if (is_object($argument) && !($argument instanceof \stdClass)) {
-                foreach ($this->getAllClasses($argument) as $class) {
-                    $argumentsClass[$class][] = $name;
-                }
-            }
-        }
-
-        // Try to get all parameters values
-        foreach ($reflectionParameters as $reflectionParameter) {
-            if ($reflectionParameter instanceof \ReflectionParameter) {
-                $parameterValue = null;
-                $parameterValueFound = false;
-
-                // Parameter in arguments?
-                if (array_key_exists($reflectionParameter->getName(), $arguments)) {
-                    $parameterValue = $arguments[$reflectionParameter->getName()];
-                    $parameterValueFound = true;
-                } else {
-                    // Parameter is class?
-                    if ($reflectionParameter->hasType() && !$reflectionParameter->getType()->isBuiltin()) {
-                        // Service exists?
-                        if (!empty($this->classes[$reflectionParameter->getType()->getName()])) {
-                            $classes = $this->classes[$reflectionParameter->getType()->getName()];
-
-                            if (in_array($reflectionParameter->getName(), $classes)) {
-                                $parameterValue = $this->get($reflectionParameter->getName());
-                            } else {
-                                $parameterValue = $this->get(reset($classes));
-                            }
-                            $parameterValueFound = true;
-                        } else {
-                            // Present in arguments?
-                            if (isset($argumentsClass[$reflectionParameter->getType()->getName()])) {
-                                $parameterValue = $arguments[reset($argumentsClass[$reflectionParameter->getType()->getName()])];
-                                $parameterValueFound = true;
-                            } else {
-                                // Try to create argument object
-                                if ($this->has($reflectionParameter->getType()->getName())) {
-                                    $parameterValue = $this->get($reflectionParameter->getType()->getName());
-                                    $parameterValueFound = true;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Default value?
-                if ($parameterValueFound === false) {
-                    if ($reflectionParameter->isDefaultValueAvailable()) {
-                        $parameterValue = $reflectionParameter->getDefaultValue();
-                    } else {
-                        if ($reflectionParameter->allowsNull()) {
-                            $parameterValue = null;
-                        } else {
-                            throw new ContainerException(sprintf('Missing parameter "%s"', $reflectionParameter->getName()));
-                        }
-                    }
-                }
-
-                $parameters[$reflectionParameter->getName()] = $parameterValue;
-            }
-        }
-
-        return $parameters;
     }
 }
