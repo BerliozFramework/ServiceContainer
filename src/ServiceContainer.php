@@ -93,6 +93,7 @@ class ServiceContainer implements ServiceContainerInterface, \Serializable
     {
         if (is_null($this->instantiator)) {
             $this->instantiator = new Instantiator(null, $this);
+            $this->register('instantiator', $this->instantiator);
         }
 
         return $this->instantiator;
@@ -108,6 +109,7 @@ class ServiceContainer implements ServiceContainerInterface, \Serializable
     public function setInstantiator(Instantiator $instantiator): ServiceContainer
     {
         $this->instantiator = $instantiator;
+        $this->register('instantiator', $this->instantiator);
 
         return $this;
     }
