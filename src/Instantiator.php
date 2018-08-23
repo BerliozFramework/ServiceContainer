@@ -120,14 +120,14 @@ class Instantiator
                     $arguments = $this->getDependencyInjectionParameters($constructor->getParameters(), $arguments);
                 }
             }
-
-            if (is_null($constructor)) {
-                return $reflectionClass->newInstanceWithoutConstructor();
-            } else {
-                return $reflectionClass->newInstanceArgs($arguments);
-            }
         } catch (\Exception $e) {
             throw new InstantiatorException(sprintf('Error during dependency injection of class "%s"', $class), 0, $e);
+        }
+
+        if (is_null($constructor)) {
+            return $reflectionClass->newInstanceWithoutConstructor();
+        } else {
+            return $reflectionClass->newInstanceArgs($arguments);
         }
     }
 
@@ -157,11 +157,11 @@ class Instantiator
             if ($dependencyInjection) {
                 $arguments = $this->getDependencyInjectionParameters($reflectionMethod->getParameters(), $arguments);
             }
-
-            return $reflectionMethod->invokeArgs($object, $arguments);
         } catch (\Exception $e) {
             throw new InstantiatorException(sprintf('Error during dependency injection of method "%s::%s"', get_class($object), $method), 0, $e);
         }
+
+        return $reflectionMethod->invokeArgs($object, $arguments);
     }
 
     /**
@@ -184,11 +184,11 @@ class Instantiator
             if ($dependencyInjection) {
                 $arguments = $this->getDependencyInjectionParameters($reflectionFunction->getParameters(), $arguments);
             }
-
-            return $reflectionFunction->invokeArgs($arguments);
         } catch (\Exception $e) {
             throw new InstantiatorException(sprintf('Error during dependency injection of function "%s"', $function), 0, $e);
         }
+
+        return $reflectionFunction->invokeArgs($arguments);
     }
 
     /**
