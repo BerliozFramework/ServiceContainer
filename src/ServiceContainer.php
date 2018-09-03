@@ -21,13 +21,13 @@ class ServiceContainer implements ServiceContainerInterface, \Serializable
     /** @var \Berlioz\ServiceContainer\Instantiator Instantiator */
     private $instantiator;
     /** @var array Classes */
-    private $classes;
+    private $classes = [];
     /** @var array Services constraints */
     private $constraints = [];
     /** @var array Services */
-    private $services;
+    private $services = [];
     /** @var array Initialization */
-    private $initialization;
+    private $initialization = [];
 
     /**
      * ServiceContainer constructor.
@@ -41,10 +41,6 @@ class ServiceContainer implements ServiceContainerInterface, \Serializable
         if (!is_null($instantiator)) {
             $this->setInstantiator($instantiator);
         }
-
-        $this->classes = [];
-        $this->services = [];
-        $this->initialization = [];
 
         // Set constraints
         $this->setConstraints($constraints);
@@ -61,9 +57,16 @@ class ServiceContainer implements ServiceContainerInterface, \Serializable
      */
     public function serialize(): string
     {
+        $services = $this->services;
+        array_walk($services,
+            function (&$value) {
+                $value['object'] = null;
+            });
+
         return serialize(['classIndex'  => $this->getInstantiator()->getClassIndex(),
                           'classes'     => $this->classes,
-                          'constraints' => $this->constraints]);
+                          'constraints' => $this->constraints,
+                          'services'    => $services]);
     }
 
     /**
@@ -78,6 +81,7 @@ class ServiceContainer implements ServiceContainerInterface, \Serializable
         }
         $this->classes = $tmpUnserialized['classes'];
         $this->constraints = $tmpUnserialized['constraints'];
+        $this->services = $tmpUnserialized['services'];
     }
 
     ////////////////////
