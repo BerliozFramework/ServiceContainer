@@ -10,8 +10,9 @@
  * file that was distributed with this source code, to the root.
  */
 
-namespace Berlioz\ServiceContainer\Exception;
+declare(strict_types=1);
 
+namespace Berlioz\ServiceContainer\Exception;
 
 use Psr\Container\NotFoundExceptionInterface;
 
