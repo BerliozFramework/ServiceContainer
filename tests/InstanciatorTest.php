@@ -114,9 +114,6 @@ class InstantiatorTest extends TestCase
         $serviceContainer = ServiceContainerTest::getServiceContainer();
         $instantiator = new Instantiator(null, $serviceContainer);
 
-        $result = $instantiator->invokeMethod(Service4::class, 'test');
-        $this->assertEquals(sprintf('It\'s a test "%s"', Service4::class), $result);
-
         $result = $instantiator->invokeMethod(Service2::class, 'testStatic');
         $this->assertEquals(sprintf('It\'s a test "%s"', Service1::class), $result);
     }
@@ -129,6 +126,6 @@ class InstantiatorTest extends TestCase
         $this->expectException(InstantiatorException::class);
         $serviceContainer = ServiceContainerTest::getServiceContainer();
         $instantiator = new Instantiator(null, $serviceContainer);
-        $instantiator->invokeMethod(Service2::class, 'test');
+        $instantiator->invokeMethod(Service4::class, 'test');
     }
 }

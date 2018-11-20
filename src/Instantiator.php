@@ -157,7 +157,7 @@ class Instantiator
 
             // Create object from class
             if (!$reflectionMethod->isStatic() && is_string($class)) {
-                $class = $this->newInstanceOf($class);
+                throw new InstantiatorException('First argument must be an object if you want call a non static method');
             }
 
             // Dependency injection?
