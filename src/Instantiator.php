@@ -136,34 +136,49 @@ class Instantiator
     /**
      * Invocation of method.
      *
-     * @param object $object              Object
-     * @param string $method              Method name
-     * @param array  $arguments           Arguments
-     * @param bool   $dependencyInjection Dependency injection? (default: true)
+     * @param object|string $class               Class or object
+     * @param string        $method              Method name
+     * @param array         $arguments           Arguments
+     * @param bool          $dependencyInjection Dependency injection? (default: true)
      *
      * @return mixed
      * @throws \Berlioz\ServiceContainer\Exception\InstantiatorException
      */
-    public function invokeMethod($object, string $method, array $arguments = [], bool $dependencyInjection = true)
+    public function invokeMethod($class, string $method, array $arguments = [], bool $dependencyInjection = true)
     {
         // Check validity of first argument
-        if (!is_object($object)) {
-            throw new InstantiatorException(sprintf('First argument must be a valid object, %s given', gettype($object)));
+        if (!(is_object($class) || (is_string($class) && class_exists($class)))) {
+            throw new InstantiatorException(sprintf('First argument must be a valid class name or an object, %s given', gettype($class)));
         }
 
         try {
             // Reflection of method
-            $reflectionMethod = new \ReflectionMethod($object, $method);
+            $reflectionMethod = new \ReflectionMethod($class, $method);
+
+            // Create object from class
+            if (!$reflectionMethod->isStatic() && is_string($class)) {
+                $class = $this->newInstanceOf($class);
+            }
 
             // Dependency injection?
             if ($dependencyInjection) {
                 $arguments = $this->getDependencyInjectionParameters($reflectionMethod->getParameters(), $arguments);
             }
+        } catch (InstantiatorException $e) {
+            throw $e;
         } catch (\Exception $e) {
-            throw new InstantiatorException(sprintf('Error during dependency injection of method "%s::%s"', get_class($object), $method), 0, $e);
+            throw new InstantiatorException(sprintf('Error during dependency injection of method "%s::%s"',
+                                                    is_object($class) ? get_class($class) : $class,
+                                                    $method), 0, $e);
         }
 
-        return $reflectionMethod->invokeArgs($object, $arguments);
+        // Static method
+        if ($reflectionMethod->isStatic()) {
+            return $reflectionMethod->invokeArgs(null, $arguments);
+        }
+
+        // Non static method
+        return $reflectionMethod->invokeArgs($class, $arguments);
     }
 
     /**

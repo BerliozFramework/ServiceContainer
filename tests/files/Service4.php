@@ -19,4 +19,9 @@ class Service4
     public $param2;
     public $param3;
     public $param4;
+
+    public function test()
+    {
+        return sprintf('It\'s a test "%s"', static::class);
+    }
 }

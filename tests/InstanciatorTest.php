@@ -13,8 +13,8 @@
 namespace Berlioz\ServiceContainer\Tests;
 
 use Berlioz\ServiceContainer\Exception\ContainerException;
+use Berlioz\ServiceContainer\Exception\InstantiatorException;
 use Berlioz\ServiceContainer\Instantiator;
-use Berlioz\ServiceContainer\ServiceContainer;
 use Berlioz\ServiceContainer\Tests\files\Service1;
 use Berlioz\ServiceContainer\Tests\files\Service2;
 use Berlioz\ServiceContainer\Tests\files\Service3;
@@ -23,55 +23,6 @@ use PHPUnit\Framework\TestCase;
 
 class InstantiatorTest extends TestCase
 {
-    private function getConfig()
-    {
-        $json = <<<'EOD'
-{
-  "aliasService1": {
-    "class": "\\Berlioz\\ServiceContainer\\Tests\\files\\Service1",
-    "arguments": {
-      "param1": "test",
-      "param2": "test",
-      "param3": 1 
-    },
-    "calls": [
-      {
-        "method": "increaseParam3",
-        "arguments": {
-          "nb": 5
-        }
-      }
-    ]
-  },
-  "aliasService1X": {
-    "class": "\\Berlioz\\ServiceContainer\\Tests\\files\\Service1",
-    "arguments": {
-      "param1": "another",
-      "param2": "test",
-      "param3": 1 
-    }
-  },
-  "aliasService2": {
-    "class": "\\Berlioz\\ServiceContainer\\Tests\\files\\Service2",
-    "arguments": {
-      "param3": false,
-      "param1": "test"
-    }
-  },
-  "aliasServiceX": {
-    "class": "\\Berlioz\\ServiceContainer\\Tests\\files\\Service2",
-    "arguments": {
-      "param3": false,
-      "param1": "test",
-      "param2": "@aliasService1X"
-    }
-  }
-}
-EOD;
-
-        return json_decode($json, true);
-    }
-
     /**
      * @throws \Psr\Container\ContainerExceptionInterface
      */
@@ -146,12 +97,38 @@ EOD;
      */
     public function testInvokeMethod()
     {
-        $serviceContainer = new ServiceContainer($this->getConfig());
+        $serviceContainer = ServiceContainerTest::getServiceContainer();
         $instantiator = new Instantiator(null, $serviceContainer);
         $service = $serviceContainer->get(Service2::class);
         $result = $instantiator->invokeMethod($service,
                                               'test',
                                               ['param' => ($str = 'toto')]);
         $this->assertEquals(sprintf('It\'s a test "%s"', $str), $result);
+    }
+
+    /**
+     * @throws \Psr\Container\ContainerExceptionInterface
+     */
+    public function testInvokeStaticMethod()
+    {
+        $serviceContainer = ServiceContainerTest::getServiceContainer();
+        $instantiator = new Instantiator(null, $serviceContainer);
+
+        $result = $instantiator->invokeMethod(Service4::class, 'test');
+        $this->assertEquals(sprintf('It\'s a test "%s"', Service4::class), $result);
+
+        $result = $instantiator->invokeMethod(Service2::class, 'testStatic');
+        $this->assertEquals(sprintf('It\'s a test "%s"', Service1::class), $result);
+    }
+
+    /**
+     * @throws \Psr\Container\ContainerExceptionInterface
+     */
+    public function testInvokeStaticMethodWithNonStaticMethod()
+    {
+        $this->expectException(InstantiatorException::class);
+        $serviceContainer = ServiceContainerTest::getServiceContainer();
+        $instantiator = new Instantiator(null, $serviceContainer);
+        $instantiator->invokeMethod(Service2::class, 'test');
     }
 }
