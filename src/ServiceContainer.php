@@ -84,6 +84,10 @@ class ServiceContainer implements ServiceContainerInterface, \Serializable
         $this->classes = $tmpUnserialized['classes'];
         $this->constraints = $tmpUnserialized['constraints'];
         $this->services = $tmpUnserialized['services'];
+        
+        // Register the service container and the initiator again to register their objects
+        $this->register('ServiceContainer', $this);
+        $this->register('instantiator', $this->getInstantiator());
     }
 
     ////////////////////
