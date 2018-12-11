@@ -19,61 +19,12 @@ use Psr\Container\ContainerInterface;
 interface ServiceContainerInterface extends ContainerInterface
 {
     /**
-     * Register a service.
+     * Add a service.
      *
-     * Format for $calls argument:
-     *   [ [ 'method' => 'myMethod',
-     *       'arguments' => [ 'argument1' => true ] ] ]
+     * @param \Berlioz\ServiceContainer\Service $service
      *
-     * @param string        $alias     Alias
-     * @param string|object $class     Class name or object
-     * @param array         $arguments Arguments for creation of object (if class given in second parameter)
-     * @param array         $calls     Callable methods after creation of object (if class given in second parameter)
-     *
-     * @return \Berlioz\ServiceContainer\ServiceContainerInterface
+     * @return static
      * @throws \Psr\Container\ContainerExceptionInterface
      */
-    public function register(string $alias, $class, array $arguments = [], array $calls = []): ServiceContainerInterface;
-
-    /**
-     * Register multiple services.
-     *
-     * Format:
-     *   [ 'alias' => [ 'class' => '\MyClass\Of\Service',
-     *                  'arguments' => [ 'argument1' => true ],
-     *                  'calls' => [ [ 'method' => 'myMethod',
-     *                                 'arguments' => [ 'argument1' => true ] ] ] ] ]
-     *
-     * @param array $services Services
-     *
-     * @return \Berlioz\ServiceContainer\ServiceContainerInterface
-     * @throws \Psr\Container\ContainerExceptionInterface
-     */
-    public function registerServices(array $services): ServiceContainerInterface;
-
-    /**
-     * Get constraints.
-     *
-     * @return array
-     */
-    public function getConstraints(): array;
-
-    /**
-     * Set constraints.
-     *
-     * @param array $constraints
-     *
-     * @return \Berlioz\ServiceContainer\ServiceContainer
-     */
-    public function setConstraints(array $constraints): ServiceContainer;
-
-    /**
-     * Set constraint for service.
-     *
-     * @param string $alias Service alias
-     * @param string $class Class name
-     *
-     * @return \Berlioz\ServiceContainer\ServiceContainer
-     */
-    public function addConstraint(string $alias, string $class): ServiceContainer;
+    public function add(Service $service): ServiceContainerInterface;
 }

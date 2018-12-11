@@ -177,6 +177,7 @@ class Instantiator
             return $reflectionMethod->invokeArgs(null, $arguments);
         }
 
+        /** @var object $class */
         // Non static method
         return $reflectionMethod->invokeArgs($class, $arguments);
     }
@@ -309,7 +310,11 @@ class Instantiator
         }
 
         if ($reflectionParameter->isDefaultValueAvailable()) {
-            return $reflectionParameter->getDefaultValue();
+            try {
+                return $reflectionParameter->getDefaultValue();
+            } catch (\Exception $e) {
+                throw new InstantiatorException(sprintf('Unable to get default value of parameter "%s"', $reflectionParameter->getName()));
+            }
         } else {
             if ($reflectionParameter->allowsNull()) {
                 return null;
