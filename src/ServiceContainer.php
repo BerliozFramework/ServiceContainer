@@ -14,6 +14,8 @@ declare(strict_types=1);
 
 namespace Berlioz\ServiceContainer;
 
+use Berlioz\ServiceContainer\Exception\NotFoundException;
+
 class ServiceContainer implements ServiceContainerInterface, \Serializable
 {
     /** @var \Berlioz\ServiceContainer\Instantiator Instantiator */
@@ -149,6 +151,10 @@ class ServiceContainer implements ServiceContainerInterface, \Serializable
         }
 
         // Register new service, thrown Exception if not found
+        if (!class_exists($id)) {
+            throw new NotFoundException(sprintf('Unable to find "%s" service', $id));
+        }
+
         return $this->add(new Service($id));
     }
 
