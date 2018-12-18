@@ -113,6 +113,16 @@ class Service implements \Serializable
     }
 
     /**
+     * Get arguments.
+     *
+     * @return array
+     */
+    public function getArguments(): array
+    {
+        return $this->arguments ?? [];
+    }
+
+    /**
      * Add argument.
      *
      * @param string $name
@@ -186,10 +196,12 @@ class Service implements \Serializable
 
         // Create instance of object
         if (is_null($this->factory)) {
-            $this->object = $instantiator->newInstanceOf($this->class, $this->arguments ?? []);
+            $this->object = $instantiator->newInstanceOf($this->class, $this->getArguments());
         } else {
             $factory = explode('::', $this->factory, 2);
-            $object = $instantiator->invokeMethod($factory[0], $factory[1], $this->arguments ?? []);
+            $object = $instantiator->invokeMethod($factory[0],
+                                                  $factory[1],
+                                                  array_merge(['service' => $this], $this->getArguments()));
 
             if (!$object instanceof $this->class) {
                 throw new ContainerException(sprintf('Factory "%s" must returns a "%s" class, "%s" returned', $this->factory, $this->class, get_class($object)));
