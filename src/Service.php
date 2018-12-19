@@ -138,6 +138,20 @@ class Service implements \Serializable
     }
 
     /**
+     * Add arguments.
+     *
+     * @param mixed[] $arguments
+     *
+     * @return \Berlioz\ServiceContainer\Service
+     */
+    public function addArguments(array $arguments): Service
+    {
+        $this->arguments = array_replace($this->arguments ?? [], $arguments);
+
+        return $this;
+    }
+
+    /**
      * Add call.
      *
      * @param string  $method
