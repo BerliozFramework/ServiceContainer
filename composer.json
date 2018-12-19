@@ -3,11 +3,11 @@
   "description": "Berlioz Service Container",
   "minimum-stability": "stable",
   "license": "MIT",
-  "homepage": "http://www.berlioz-framework.com",
+  "homepage": "http://getberlioz.com",
   "authors": [
     {
       "name": "Ronan Giron",
-      "email": "ronan.giron@berlioz-framework.com"
+      "email": "ronan.giron@getberlioz.com"
     }
   ],
   "autoload": {
@@ -26,7 +26,7 @@
   },
   "require-dev": {
     "ext-json": "*",
-    "phpunit/phpunit": "^7.4"
+    "phpunit/phpunit": "^7.5"
   },
   "provide": {
     "psr/container-implementation": "^1.0"
