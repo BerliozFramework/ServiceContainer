@@ -16,6 +16,11 @@ namespace Berlioz\ServiceContainer;
 
 use Psr\Container\ContainerInterface;
 
+/**
+ * Interface ServiceContainerInterface.
+ *
+ * @package Berlioz\ServiceContainer
+ */
 interface ServiceContainerInterface extends ContainerInterface
 {
     /**

@@ -14,6 +14,11 @@ declare(strict_types=1);
 
 namespace Berlioz\ServiceContainer\Exception;
 
+/**
+ * Class ClassIndexException.
+ *
+ * @package Berlioz\ServiceContainer\Exception
+ */
 class ClassIndexException extends ContainerException
 {
 }

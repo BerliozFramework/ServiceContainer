@@ -17,6 +17,11 @@ namespace Berlioz\ServiceContainer;
 use Berlioz\ServiceContainer\Exception\InstantiatorException;
 use Psr\Container\ContainerInterface;
 
+/**
+ * Class Instantiator.
+ *
+ * @package Berlioz\ServiceContainer
+ */
 class Instantiator
 {
     /** @var \Berlioz\ServiceContainer\ClassIndex Class index */

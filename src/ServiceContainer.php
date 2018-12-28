@@ -16,6 +16,11 @@ namespace Berlioz\ServiceContainer;
 
 use Berlioz\ServiceContainer\Exception\NotFoundException;
 
+/**
+ * Class ServiceContainer.
+ *
+ * @package Berlioz\ServiceContainer
+ */
 class ServiceContainer implements ServiceContainerInterface, \Serializable
 {
     /** @var \Berlioz\ServiceContainer\Instantiator Instantiator */

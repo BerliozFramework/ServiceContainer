@@ -16,6 +16,11 @@ namespace Berlioz\ServiceContainer;
 
 use Berlioz\ServiceContainer\Exception\ContainerException;
 
+/**
+ * Class Service.
+ *
+ * @package Berlioz\ServiceContainer
+ */
 class Service implements \Serializable
 {
     /** @var string Class name */

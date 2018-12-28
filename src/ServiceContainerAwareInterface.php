@@ -14,6 +14,11 @@ declare(strict_types=1);
 
 namespace Berlioz\ServiceContainer;
 
+/**
+ * Interface ServiceContainerAwareInterface.
+ *
+ * @package Berlioz\ServiceContainer
+ */
 interface ServiceContainerAwareInterface
 {
     /**

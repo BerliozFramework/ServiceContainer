@@ -16,6 +16,11 @@ namespace Berlioz\ServiceContainer;
 
 use Berlioz\ServiceContainer\Exception\ClassIndexException;
 
+/**
+ * Class ClassIndex.
+ *
+ * @package Berlioz\ServiceContainer
+ */
 class ClassIndex
 {
     /** @var array Classes */

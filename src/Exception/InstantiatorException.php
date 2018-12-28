@@ -14,6 +14,11 @@ declare(strict_types=1);
 
 namespace Berlioz\ServiceContainer\Exception;
 
+/**
+ * Class InstantiatorException.
+ *
+ * @package Berlioz\ServiceContainer\Exception
+ */
 class InstantiatorException extends ContainerException
 {
 }
