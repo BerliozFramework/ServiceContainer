@@ -66,11 +66,14 @@ class ServiceContainer implements ServiceContainerInterface, \Serializable
     {
         $tmpUnserialized = unserialize($serialized);
 
+        $this->classes = $tmpUnserialized['classes'];
+        $this->services = $tmpUnserialized['services'];
         if (!empty($tmpUnserialized['classIndex'])) {
             $this->getInstantiator()->setClassIndex($tmpUnserialized['classIndex']);
         }
-        $this->classes = $tmpUnserialized['classes'];
-        $this->services = $tmpUnserialized['services'];
+
+        // Register me into services
+        $this->add(new Service($this));
     }
 
     ////////////////////
