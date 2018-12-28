@@ -2,6 +2,8 @@
 
 **Berlioz Service Container** is a PHP library to manage your services with dependencies injection, respecting PSR-11 (Container interface) standard.
 
+For more information, and use of Berlioz Framework, go to website and online documentation :
+https://getberlioz.com
 
 ## Installation
 
@@ -37,45 +39,33 @@ Methods available more than :
   > PSR-11: Returns true if the container can return an entry for the given identifier.
   > Returns false otherwise.
 
-- `register(string $alias, $class, array $arguments = [], array $calls = [])`
+- `add(Service $service)`
 
-  > Register a service.
+  > Register a new service.
+
+A Service object:
+
+- `Service::__construct(string|object $class, ?string $alias = null)`
+
+  > Constructor of Service object.
+
+- `Service::addArgument(string $name, mixed $value): Service`
+
+  > Add argument to make an instance of service class.
+
+- `Service::addArguments(array $arguments): Service`
+
+  > It's an array of arguments, the key must be the name of argument and the value of key, must be the argument value.
+
+- `Service::addCall(string $method, array $arguments = []): Service`
+
+  > Method name (and arguments) called just after the construction of object class.
+
+- `Service::setFactory(string $factory): Service`
+
+  > It's the factory static method used to make object.
   >
-  > Format for $calls argument:
-  > ```php
-  > [ [ 'method' => 'myMethod',
-  >     'arguments' => [ 'argument1' => true ] ] ]
-  > ```
-
-- `registerServices(array $services)`
-
-  > Register multiple services.
-  >
-  > Format:
-  > ```php
-  > [ 'alias' => [ 'class' => '\MyClass\Of\Service',
-  >                'arguments' => [ 'argument1' => true ],
-  >                'calls' => [ [ 'method' => 'myMethod',
-  >                               'arguments' => [ 'argument1' => true ] ] ] ] ]
-  > ```
-
-- `getConstraints()`
-
-  > Get constraints.
-
-- `setConstraints(array $constraints)`
-
-  > Set constraints.
-  >
-  > Format:
-  > ```php
-  > [ 'serviceName' => '\MyClass\of\Service',
-  >   ... ]
-  > ```
-
-- `addConstraint(string $alias, string $class)`
-
-  > Set constraint for service.
+  > Example: `MyProject\Name\Space\MyFactory::service`
 
 ### Instantiator
 
