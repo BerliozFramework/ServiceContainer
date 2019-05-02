@@ -159,7 +159,10 @@ class ServiceContainer implements ServiceContainerInterface, \Serializable
             throw new NotFoundException(sprintf('Unable to find "%s" service', $id));
         }
 
-        return $this->add(new Service($id));
+        // Add new service
+        $this->add(new Service($id));
+
+        return $this->get($id);
     }
 
     /**

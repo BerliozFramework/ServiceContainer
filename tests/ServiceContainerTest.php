@@ -16,6 +16,7 @@ use Berlioz\ServiceContainer\Service;
 use Berlioz\ServiceContainer\ServiceContainer;
 use Berlioz\ServiceContainer\Tests\files\Service1;
 use Berlioz\ServiceContainer\Tests\files\Service2;
+use Berlioz\ServiceContainer\Tests\files\Service5;
 use Berlioz\ServiceContainer\Tests\files\ServiceFactory;
 use PHPUnit\Framework\TestCase;
 
@@ -126,6 +127,14 @@ class ServiceContainerTest extends TestCase
 
         $this->assertNotEquals($serviceObj1, $serviceObjX->getParam2());
         $this->assertEquals($serviceObj1X, $serviceObjX->getParam2());
+    }
+
+    public function testNotReferencedService()
+    {
+        $serviceContainer = self::getServiceContainer();
+        $serviceObj = $serviceContainer->get(Service5::class);
+
+        $this->assertInstanceOf(Service5::class, $serviceObj);
     }
 
     public function testServiceFactory()
