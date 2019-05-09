@@ -12,11 +12,15 @@
 
 namespace Berlioz\ServiceContainer\Tests;
 
+use Berlioz\ServiceContainer\Exception\InstantiatorException;
 use Berlioz\ServiceContainer\Service;
 use Berlioz\ServiceContainer\ServiceContainer;
 use Berlioz\ServiceContainer\Tests\files\Service1;
 use Berlioz\ServiceContainer\Tests\files\Service2;
 use Berlioz\ServiceContainer\Tests\files\Service5;
+use Berlioz\ServiceContainer\Tests\files\Service6;
+use Berlioz\ServiceContainer\Tests\files\Service7;
+use Berlioz\ServiceContainer\Tests\files\Service8;
 use Berlioz\ServiceContainer\Tests\files\ServiceFactory;
 use PHPUnit\Framework\TestCase;
 
@@ -135,6 +139,24 @@ class ServiceContainerTest extends TestCase
         $serviceObj = $serviceContainer->get(Service5::class);
 
         $this->assertInstanceOf(Service5::class, $serviceObj);
+    }
+
+    public function testNotReferencedServiceWithDependencies()
+    {
+        $serviceContainer = self::getServiceContainer();
+
+        $serviceObj = $serviceContainer->get(Service6::class);
+        $this->assertInstanceOf(Service6::class, $serviceObj);
+
+        $serviceObj = $serviceContainer->get(Service7::class);
+        $this->assertInstanceOf(Service7::class, $serviceObj);
+    }
+
+    public function testNotReferencedServiceWithDependenciesUnresolvable()
+    {
+        //$this->expectException(InstantiatorException::class);
+        $serviceContainer = self::getServiceContainer();
+        $serviceContainer->get(Service8::class);
     }
 
     public function testServiceFactory()

@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Berlioz\ServiceContainer;
 
 use Berlioz\ServiceContainer\Exception\InstantiatorException;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -307,9 +308,13 @@ class Instantiator
                 }
 
                 // Service exists with same class?
-                if ($this->getContainer()->has($reflectionParameter->getType()->getName())
-                    && is_a($service = $this->getContainer()->get($reflectionParameter->getType()->getName()), $reflectionParameter->getType()->getName())) {
-                    return $service;
+                try {
+                    $service = $this->getContainer()->get($reflectionParameter->getType()->getName());
+
+                    if (is_a($service, $reflectionParameter->getType()->getName())) {
+                        return $service;
+                    }
+                } catch (ContainerExceptionInterface $e) {
                 }
             }
         }
@@ -320,12 +325,12 @@ class Instantiator
             } catch (\Exception $e) {
                 throw new InstantiatorException(sprintf('Unable to get default value of parameter "%s"', $reflectionParameter->getName()));
             }
-        } else {
-            if ($reflectionParameter->allowsNull()) {
-                return null;
-            } else {
-                throw new InstantiatorException(sprintf('Missing parameter "%s"', $reflectionParameter->getName()));
-            }
         }
+
+        if (!$reflectionParameter->allowsNull()) {
+            throw new InstantiatorException(sprintf('Missing parameter "%s"', $reflectionParameter->getName()));
+        }
+
+        return null;
     }
 }
