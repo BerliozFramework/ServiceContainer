@@ -154,7 +154,7 @@ class ServiceContainerTest extends TestCase
 
     public function testNotReferencedServiceWithDependenciesUnresolvable()
     {
-        //$this->expectException(InstantiatorException::class);
+        $this->expectException(InstantiatorException::class);
         $serviceContainer = self::getServiceContainer();
         $serviceContainer->get(Service8::class);
     }

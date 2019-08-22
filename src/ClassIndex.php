@@ -29,8 +29,8 @@ class ClassIndex
     /**
      * Get all classes of a class (herself, parents classes and interfaces).
      *
-     * @param string|object $class    Class name
-     * @param bool          $autoload Auto load
+     * @param string|object $class Class name
+     * @param bool $autoload Auto load
      *
      * @return array
      * @throws \Berlioz\ServiceContainer\Exception\ClassIndexException
@@ -42,14 +42,14 @@ class ClassIndex
         }
 
         if (!isset($this->classes[$class])) {
-            $classes = array_merge([ltrim($class, '\\')],
-                                   $resultClassParents = @class_parents($class, $autoload),
-                                   $resultClassImplements = @class_implements($class, $autoload));
+            $resultClassParents = @class_parents($class, $autoload);
+            $resultClassImplements = @class_implements($class, $autoload);
 
             if ($resultClassParents === false || $resultClassImplements === false) {
                 throw new ClassIndexException(sprintf('Unable to get all classes of class "%s"', $class));
             }
 
+            $classes = array_merge([ltrim($class, '\\')], $resultClassParents, $resultClassImplements);
             $this->classes[$class] = array_unique($classes);
         }
 

@@ -12,6 +12,7 @@
 
 namespace Berlioz\ServiceContainer\Tests;
 
+use Berlioz\ServiceContainer\Exception\ClassIndexException;
 use Berlioz\ServiceContainer\Exception\ContainerException;
 use Berlioz\ServiceContainer\Exception\InstantiatorException;
 use Berlioz\ServiceContainer\Instantiator;
@@ -29,11 +30,15 @@ class InstantiatorTest extends TestCase
     public function testNewInstanceOf()
     {
         $instantiator = new Instantiator;
-        $service = $instantiator->newInstanceOf(Service3::class,
-                                                ['param1' => 'test',
-                                                 'param2' => 'test',
-                                                 'param3' => 3,
-                                                 'param4' => 'test']);
+        $service = $instantiator->newInstanceOf(
+            Service3::class,
+            [
+                'param1' => 'test',
+                'param2' => 'test',
+                'param3' => 3,
+                'param4' => 'test',
+            ]
+        );
         $this->assertInstanceOf(Service3::class, $service);
     }
 
@@ -44,9 +49,13 @@ class InstantiatorTest extends TestCase
     {
         $service1 = new Service1('param1', 'param2', 1);
         $instantiator = new Instantiator;
-        $service = $instantiator->newInstanceOf(Service2::class,
-                                                ['param1'   => 'test',
-                                                 'aService' => $service1]);
+        $service = $instantiator->newInstanceOf(
+            Service2::class,
+            [
+                'param1' => 'test',
+                'aService' => $service1,
+            ]
+        );
         $this->assertInstanceOf(Service2::class, $service);
         $this->assertEquals($service1, $service->getParam2());
     }
@@ -57,9 +66,13 @@ class InstantiatorTest extends TestCase
     public function testNewInstanceOf_optionalParameters()
     {
         $instantiator = new Instantiator();
-        $service = $instantiator->newInstanceOf(Service3::class,
-                                                ['param1' => 'test',
-                                                 'param2' => 'test']);
+        $service = $instantiator->newInstanceOf(
+            Service3::class,
+            [
+                'param1' => 'test',
+                'param2' => 'test',
+            ]
+        );
         $this->assertInstanceOf(Service3::class, $service);
         $this->assertNull($service->param3);
         $this->assertEquals('test', $service->param4);
@@ -72,9 +85,13 @@ class InstantiatorTest extends TestCase
     {
         $this->expectException(ContainerException::class);
         $instantiator = new Instantiator;
-        $instantiator->newInstanceOf(Service3::class,
-                                     ['param1' => 'test',
-                                      'param4' => 'test2']);
+        $instantiator->newInstanceOf(
+            Service3::class,
+            [
+                'param1' => 'test',
+                'param4' => 'test2',
+            ]
+        );
     }
 
     /**
@@ -83,9 +100,13 @@ class InstantiatorTest extends TestCase
     public function testNewInstanceOf_withoutConstructor()
     {
         $instantiator = new Instantiator;
-        $service = $instantiator->newInstanceOf(Service4::class,
-                                                ['param1' => 'test',
-                                                 'param4' => 'test2']);
+        $service = $instantiator->newInstanceOf(
+            Service4::class,
+            [
+                'param1' => 'test',
+                'param4' => 'test2',
+            ]
+        );
         $this->assertInstanceOf(Service4::class, $service);
 
         $service = $instantiator->newInstanceOf(Service4::class);
@@ -100,9 +121,11 @@ class InstantiatorTest extends TestCase
         $serviceContainer = ServiceContainerTest::getServiceContainer();
         $instantiator = new Instantiator(null, $serviceContainer);
         $service = $serviceContainer->get(Service2::class);
-        $result = $instantiator->invokeMethod($service,
-                                              'test',
-                                              ['param' => ($str = 'toto')]);
+        $result = $instantiator->invokeMethod(
+            $service,
+            'test',
+            ['param' => ($str = 'toto')]
+        );
         $this->assertEquals(sprintf('It\'s a test "%s"', $str), $result);
     }
 
@@ -127,5 +150,12 @@ class InstantiatorTest extends TestCase
         $serviceContainer = ServiceContainerTest::getServiceContainer();
         $instantiator = new Instantiator(null, $serviceContainer);
         $instantiator->invokeMethod(Service4::class, 'test');
+    }
+
+    public function testClassIndexWithNonexistentClass()
+    {
+        $this->expectException(ClassIndexException::class);
+        $instantiator = new Instantiator();
+        $instantiator->getClassIndex()->getAllClasses('FooBarClass');
     }
 }
