@@ -158,4 +158,17 @@ class InstantiatorTest extends TestCase
         $instantiator = new Instantiator();
         $instantiator->getClassIndex()->getAllClasses('FooBarClass');
     }
+
+    public function testClassIndexWithInterface()
+    {
+        $instantiator = new Instantiator();
+        $classes = $instantiator->getClassIndex()->getAllClasses('Iterator');
+        $this->assertEquals(
+            [
+                'Iterator',
+                'Traversable',
+            ],
+            $classes
+        );
+    }
 }

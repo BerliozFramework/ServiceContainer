@@ -42,7 +42,7 @@ class ClassIndex
         }
 
         if (!isset($this->classes[$class])) {
-            if (!class_exists($class, $autoload)) {
+            if (!class_exists($class, $autoload) && !interface_exists($class, $autoload)) {
                 throw new ClassIndexException(sprintf('Class "%s" does not exists', $class));
             }
 
@@ -54,7 +54,7 @@ class ClassIndex
             }
 
             $classes = array_merge([ltrim($class, '\\')], $resultClassParents, $resultClassImplements);
-            $this->classes[$class] = array_unique($classes);
+            $this->classes[$class] = array_unique(array_values($classes));
         }
 
         return $this->classes[$class];
