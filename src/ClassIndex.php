@@ -42,8 +42,12 @@ class ClassIndex
         }
 
         if (!isset($this->classes[$class])) {
-            $resultClassParents = @class_parents($class, $autoload);
-            $resultClassImplements = @class_implements($class, $autoload);
+            if (!class_exists($class, $autoload)) {
+                throw new ClassIndexException(sprintf('Class "%s" does not exists', $class));
+            }
+
+            $resultClassParents = class_parents($class, $autoload);
+            $resultClassImplements = class_implements($class, $autoload);
 
             if ($resultClassParents === false || $resultClassImplements === false) {
                 throw new ClassIndexException(sprintf('Unable to get all classes of class "%s"', $class));
