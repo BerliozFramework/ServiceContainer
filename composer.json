@@ -22,12 +22,9 @@
   },
   "require": {
     "php": "^7.1",
-    "ext-intl": "*",
-    "ext-mbstring": "*",
     "psr/container": "^1.0"
   },
   "require-dev": {
-    "ext-json": "*",
     "phpunit/phpunit": "^7.5 || ^8.0"
   },
   "provide": {
