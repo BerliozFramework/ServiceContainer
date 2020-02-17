@@ -1,5 +1,11 @@
 # Berlioz Service Container
 
+[![Latest Version](https://img.shields.io/packagist/v/berlioz/service-container.svg?style=flat-square)](https://github.com/BerliozFramework/ServiceContainer/releases)
+[![Software license](https://img.shields.io/github/license/BerliozFramework/ServiceContainer.svg?style=flat-square)](https://github.com/BerliozFramework/ServiceContainer/blob/master/LICENSE)
+[![Build Status](https://img.shields.io/travis/com/BerliozFramework/ServiceContainer/master.svg?style=flat-square)](https://travis-ci.com/BerliozFramework/ServiceContainer)
+[![Quality Grade](https://img.shields.io/codacy/grade/cb21d20358cc4ba2be5ab42bf0ddb8b2/master.svg?style=flat-square)](https://www.codacy.com/manual/BerliozFramework/ServiceContainer)
+[![Total Downloads](https://img.shields.io/packagist/dt/berlioz/service-container.svg?style=flat-square)](https://packagist.org/packages/berlioz/service-container)
+
 **Berlioz Service Container** is a PHP library to manage your services with dependencies injection, respecting PSR-11 (Container interface) standard.
 
 For more information, and use of Berlioz Framework, go to website and online documentation :
