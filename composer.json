@@ -1,6 +1,6 @@
 {
   "name": "berlioz/service-container",
-  "description": "Berlioz Service Container",
+  "description": "Berlioz Service Container is a PHP library to manage your services with dependencies injection, respecting PSR-11 (Container interface) standard.",
   "minimum-stability": "stable",
   "license": "MIT",
   "homepage": "https://getberlioz.com",
