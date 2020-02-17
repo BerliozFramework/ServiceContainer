@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Berlioz\ServiceContainer\Exception;
 
+use Exception;
 use Psr\Container\ContainerExceptionInterface;
 
 /**
@@ -21,6 +22,6 @@ use Psr\Container\ContainerExceptionInterface;
  *
  * @package Berlioz\ServiceContainer\Exception
  */
-class ContainerException extends \Exception implements ContainerExceptionInterface
+class ContainerException extends Exception implements ContainerExceptionInterface
 {
 }

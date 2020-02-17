@@ -53,6 +53,6 @@ trait ServiceContainerAwareTrait
      */
     public function hasServiceContainer(): bool
     {
-        return !is_null($this->serviceContainer);
+        return null !== $this->serviceContainer;
     }
 }

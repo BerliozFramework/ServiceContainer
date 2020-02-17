@@ -15,13 +15,14 @@ declare(strict_types=1);
 namespace Berlioz\ServiceContainer;
 
 use Berlioz\ServiceContainer\Exception\ContainerException;
+use Serializable;
 
 /**
  * Class Service.
  *
  * @package Berlioz\ServiceContainer
  */
-class Service implements \Serializable
+class Service implements Serializable
 {
     /** @var string Class name */
     private $class;
@@ -44,7 +45,7 @@ class Service implements \Serializable
      * Service constructor.
      *
      * @param string|object $class
-     * @param null|string   $alias
+     * @param null|string $alias
      *
      * @throws \Berlioz\ServiceContainer\Exception\ContainerException
      */
@@ -52,7 +53,9 @@ class Service implements \Serializable
     {
         // Check validity of first argument
         if (!(is_object($class) || is_string($class))) {
-            throw new ContainerException(sprintf('First argument must be a valid class name or an object, %s given', gettype($class)));
+            throw new ContainerException(
+                sprintf('First argument must be a valid class name or an object, %s given', gettype($class))
+            );
         }
 
         // Alias
@@ -74,11 +77,15 @@ class Service implements \Serializable
      */
     public function serialize(): string
     {
-        return serialize(['class'     => $this->class,
-                          'factory'   => $this->factory,
-                          'alias'     => $this->alias,
-                          'arguments' => $this->arguments,
-                          'calls'     => $this->calls]);
+        return serialize(
+            [
+                'class' => $this->class,
+                'factory' => $this->factory,
+                'alias' => $this->alias,
+                'arguments' => $this->arguments,
+                'calls' => $this->calls
+            ]
+        );
     }
 
     /**
@@ -131,7 +138,7 @@ class Service implements \Serializable
      * Add argument.
      *
      * @param string $name
-     * @param mixed  $value
+     * @param mixed $value
      *
      * @return \Berlioz\ServiceContainer\Service
      */
@@ -159,7 +166,7 @@ class Service implements \Serializable
     /**
      * Add call.
      *
-     * @param string  $method
+     * @param string $method
      * @param mixed[] $arguments
      *
      * @return \Berlioz\ServiceContainer\Service
@@ -184,7 +191,9 @@ class Service implements \Serializable
         $factoryExploded = explode('::', $factory, 2);
 
         if (!class_exists($factoryExploded[0]) || !method_exists($factoryExploded[0], $factoryExploded[1])) {
-            throw new ContainerException(sprintf('Must be a valid factory class and static method, "%s" given', $factory));
+            throw new ContainerException(
+                sprintf('Must be a valid factory class and static method, "%s" given', $factory)
+            );
         }
 
         $this->factory = $factory;
@@ -204,7 +213,7 @@ class Service implements \Serializable
     public function get(Instantiator $instantiator)
     {
         // Already initialized?
-        if (!is_null($this->object)) {
+        if (null !== $this->object) {
             return $this->object;
         }
 
@@ -214,16 +223,25 @@ class Service implements \Serializable
         }
 
         // Create instance of object
-        if (is_null($this->factory)) {
+        if (null === $this->factory) {
             $this->object = $instantiator->newInstanceOf($this->class, $this->getArguments());
         } else {
             $factory = explode('::', $this->factory, 2);
-            $object = $instantiator->invokeMethod($factory[0],
-                                                  $factory[1],
-                                                  array_merge(['service' => $this], $this->getArguments()));
+            $object = $instantiator->invokeMethod(
+                $factory[0],
+                $factory[1],
+                array_merge(['service' => $this], $this->getArguments())
+            );
 
             if (!$object instanceof $this->class) {
-                throw new ContainerException(sprintf('Factory "%s" must returns a "%s" class, "%s" returned', $this->factory, $this->class, get_class($object)));
+                throw new ContainerException(
+                    sprintf(
+                        'Factory "%s" must returns a "%s" class, "%s" returned',
+                        $this->factory,
+                        $this->class,
+                        get_class($object)
+                    )
+                );
             }
 
             $this->object = $object;

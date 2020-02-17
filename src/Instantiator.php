@@ -15,8 +15,15 @@ declare(strict_types=1);
 namespace Berlioz\ServiceContainer;
 
 use Berlioz\ServiceContainer\Exception\InstantiatorException;
+use Exception;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
+use ReflectionClass;
+use ReflectionFunction;
+use ReflectionFunctionAbstract;
+use ReflectionMethod;
+use ReflectionParameter;
+use stdClass;
 
 /**
  * Class Instantiator.
@@ -34,7 +41,7 @@ class Instantiator
      * Instantiator constructor.
      *
      * @param \Berlioz\ServiceContainer\ClassIndex|null $classIndex
-     * @param \Psr\Container\ContainerInterface         $container
+     * @param \Psr\Container\ContainerInterface $container
      */
     public function __construct(?ClassIndex $classIndex = null, ?ContainerInterface $container = null)
     {
@@ -81,7 +88,7 @@ class Instantiator
      */
     public function getClassIndex(): ClassIndex
     {
-        if (is_null($this->classIndex)) {
+        if (null === $this->classIndex) {
             $this->classIndex = new ClassIndex();
         }
 
@@ -109,9 +116,9 @@ class Instantiator
     /**
      * Create new instance of a class.
      *
-     * @param object|string $class               Class name or object
-     * @param array         $arguments           Arguments
-     * @param bool          $dependencyInjection Dependency injection? (default: true)
+     * @param object|string $class Class name or object
+     * @param array $arguments Arguments
+     * @param bool $dependencyInjection Dependency injection? (default: true)
      *
      * @return mixed
      * @throws \Berlioz\ServiceContainer\Exception\InstantiatorException
@@ -120,32 +127,34 @@ class Instantiator
     {
         try {
             // Reflection of class
-            $reflectionClass = new \ReflectionClass($class);
+            $reflectionClass = new ReflectionClass($class);
 
-            if (!is_null($constructor = $reflectionClass->getConstructor())) {
+            if (null !== ($constructor = $reflectionClass->getConstructor())) {
                 // Dependency injection?
                 if ($dependencyInjection) {
-                    $arguments = $this->getDependencyInjectionParameters($constructor->getParameters(), $arguments);
+                    $arguments = $this->getDependencyInjectionParameters($constructor, $arguments);
                 }
             }
-        } catch (\Exception $e) {
+        } catch (InstantiatorException $e) {
+            throw $e;
+        } catch (Exception $e) {
             throw new InstantiatorException(sprintf('Error during dependency injection of class "%s"', $class), 0, $e);
         }
 
-        if (is_null($constructor)) {
+        if (null === $constructor) {
             return $reflectionClass->newInstanceWithoutConstructor();
-        } else {
-            return $reflectionClass->newInstanceArgs($arguments);
         }
+
+        return $reflectionClass->newInstanceArgs($arguments);
     }
 
     /**
      * Invocation of method.
      *
-     * @param object|string $class               Class or object
-     * @param string        $method              Method name
-     * @param array         $arguments           Arguments
-     * @param bool          $dependencyInjection Dependency injection? (default: true)
+     * @param object|string $class Class or object
+     * @param string $method Method name
+     * @param array $arguments Arguments
+     * @param bool $dependencyInjection Dependency injection? (default: true)
      *
      * @return mixed
      * @throws \Berlioz\ServiceContainer\Exception\InstantiatorException
@@ -154,28 +163,36 @@ class Instantiator
     {
         // Check validity of first argument
         if (!(is_object($class) || (is_string($class) && class_exists($class)))) {
-            throw new InstantiatorException(sprintf('First argument must be a valid class name or an object, %s given', gettype($class)));
+            throw new InstantiatorException(
+                sprintf('First argument must be a valid class name or an object, %s given', gettype($class))
+            );
         }
 
         try {
             // Reflection of method
-            $reflectionMethod = new \ReflectionMethod($class, $method);
+            $reflectionMethod = new ReflectionMethod($class, $method);
 
             // Create object from class
             if (!$reflectionMethod->isStatic() && is_string($class)) {
-                throw new InstantiatorException('First argument must be an object if you want call a non static method');
+                throw new InstantiatorException(
+                    'First argument must be an object if you want call a non static method'
+                );
             }
 
             // Dependency injection?
             if ($dependencyInjection) {
-                $arguments = $this->getDependencyInjectionParameters($reflectionMethod->getParameters(), $arguments);
+                $arguments = $this->getDependencyInjectionParameters($reflectionMethod, $arguments);
             }
         } catch (InstantiatorException $e) {
             throw $e;
-        } catch (\Exception $e) {
-            throw new InstantiatorException(sprintf('Error during dependency injection of method "%s::%s"',
-                                                    is_object($class) ? get_class($class) : $class,
-                                                    $method), 0, $e);
+        } catch (Exception $e) {
+            throw new InstantiatorException(
+                sprintf(
+                    'Error during dependency injection of method "%s::%s"',
+                    is_object($class) ? get_class($class) : $class,
+                    $method
+                ), 0, $e
+            );
         }
 
         // Static method
@@ -191,9 +208,9 @@ class Instantiator
     /**
      * Invocation of function.
      *
-     * @param string $function            Function name
-     * @param array  $arguments           Arguments
-     * @param bool   $dependencyInjection Dependency injection? (default: true)
+     * @param string $function Function name
+     * @param array $arguments Arguments
+     * @param bool $dependencyInjection Dependency injection? (default: true)
      *
      * @return mixed
      * @throws \Berlioz\ServiceContainer\Exception\InstantiatorException
@@ -202,14 +219,20 @@ class Instantiator
     {
         try {
             // Reflection of function
-            $reflectionFunction = new \ReflectionFunction($function);
+            $reflectionFunction = new ReflectionFunction($function);
 
             // Dependency injection?
             if ($dependencyInjection) {
-                $arguments = $this->getDependencyInjectionParameters($reflectionFunction->getParameters(), $arguments);
+                $arguments = $this->getDependencyInjectionParameters($reflectionFunction, $arguments);
             }
-        } catch (\Exception $e) {
-            throw new InstantiatorException(sprintf('Error during dependency injection of function "%s"', $function), 0, $e);
+        } catch (InstantiatorException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            throw new InstantiatorException(
+                sprintf('Error during dependency injection of function "%s"', $function),
+                0,
+                $e
+            );
         }
 
         return $reflectionFunction->invokeArgs($arguments);
@@ -218,20 +241,23 @@ class Instantiator
     /**
      * Get parameters ordered to inject.
      *
-     * @param \ReflectionParameter[] $reflectionParameters
-     * @param array                  $arguments
+     * @param \ReflectionFunctionAbstract $reflectionFunction
+     * @param array $arguments
      *
      * @return array Parameters (ordered)
-     * @throws \Psr\Container\ContainerExceptionInterface
+     * @throws \Berlioz\ServiceContainer\Exception\ClassIndexException
+     * @throws \Berlioz\ServiceContainer\Exception\InstantiatorException
      */
-    private function getDependencyInjectionParameters(array $reflectionParameters, array $arguments = []): array
-    {
+    private function getDependencyInjectionParameters(
+        ReflectionFunctionAbstract $reflectionFunction,
+        array $arguments = []
+    ): array {
         $parameters = [];
 
         // Treat arguments
         $argumentsClass = [];
         foreach ($arguments as $name => &$argument) {
-            if (!is_null($this->getContainer())) {
+            if (null !== $this->getContainer()) {
                 // Service recursively
                 if (is_string($argument) && substr($argument, 0, 1) == '@') {
                     $subServiceName = substr($argument, 1);
@@ -241,7 +267,7 @@ class Instantiator
 
             // Get all classes of argument if it's an object.
             // It's necessary to know if argument can match with an injection.
-            if (is_object($argument) && !($argument instanceof \stdClass)) {
+            if (is_object($argument) && !($argument instanceof stdClass)) {
                 foreach ($this->getClassIndex()->getAllClasses($argument) as $class) {
                     $argumentsClass[$class][] = $name;
                 }
@@ -249,13 +275,18 @@ class Instantiator
         }
 
         // Try to get all parameters values
-        foreach ($reflectionParameters as $reflectionParameter) {
-            if ($reflectionParameter instanceof \ReflectionParameter) {
-                $parameters[$reflectionParameter->getName()] =
-                    $this->getDependencyInjectionParameter($reflectionParameter,
-                                                           $arguments,
-                                                           $argumentsClass);
+        foreach ($reflectionFunction->getParameters() as $reflectionParameter) {
+            if (!$reflectionParameter instanceof ReflectionParameter) {
+                continue;
             }
+
+            $parameters[$reflectionParameter->getName()] =
+                $this->getDependencyInjectionParameter(
+                    $reflectionFunction,
+                    $reflectionParameter,
+                    $arguments,
+                    $argumentsClass
+                );
         }
 
         return $parameters;
@@ -264,15 +295,20 @@ class Instantiator
     /**
      * Get parameter value for injection.
      *
+     * @param \ReflectionFunctionAbstract $reflectionFunction
      * @param \ReflectionParameter $reflectionParameter
-     * @param array                $arguments
-     * @param array                $argumentsClass
+     * @param array $arguments
+     * @param array $argumentsClass
      *
      * @return mixed|null
      * @throws \Berlioz\ServiceContainer\Exception\InstantiatorException
      */
-    private function getDependencyInjectionParameter(\ReflectionParameter $reflectionParameter, array &$arguments, array $argumentsClass)
-    {
+    private function getDependencyInjectionParameter(
+        ReflectionFunctionAbstract $reflectionFunction,
+        ReflectionParameter $reflectionParameter,
+        array &$arguments,
+        array $argumentsClass
+    ) {
         // Parameter name in arguments list?
         if (array_key_exists($reflectionParameter->getName(), $arguments)) {
             $parameter = $arguments[$reflectionParameter->getName()];
@@ -300,10 +336,13 @@ class Instantiator
                 }
             }
 
-            if (!is_null($this->getContainer())) {
+            if (null !== $this->getContainer()) {
                 // Service exists with the same name and same type?
                 if ($this->getContainer()->has($reflectionParameter->getName())
-                    && is_a($service = $this->getContainer()->get($reflectionParameter->getName()), $reflectionParameter->getType()->getName())) {
+                    && is_a(
+                        $service = $this->getContainer()->get($reflectionParameter->getName()),
+                        $reflectionParameter->getType()->getName()
+                    )) {
                     return $service;
                 }
 
@@ -322,13 +361,25 @@ class Instantiator
         if ($reflectionParameter->isDefaultValueAvailable()) {
             try {
                 return $reflectionParameter->getDefaultValue();
-            } catch (\Exception $e) {
-                throw new InstantiatorException(sprintf('Unable to get default value of parameter "%s"', $reflectionParameter->getName()));
+            } catch (Exception $e) {
+                throw new InstantiatorException(
+                    sprintf(
+                        'Unable to get default value of parameter "%s" of "%s"',
+                        $reflectionParameter->getName(),
+                        $reflectionFunction->getName()
+                    )
+                );
             }
         }
 
         if (!$reflectionParameter->allowsNull()) {
-            throw new InstantiatorException(sprintf('Missing parameter "%s"', $reflectionParameter->getName()));
+            throw new InstantiatorException(
+                sprintf(
+                    'Missing parameter "%s" of "%s"',
+                    $reflectionParameter->getName(),
+                    $reflectionParameter->getName()
+                )
+            );
         }
 
         return null;

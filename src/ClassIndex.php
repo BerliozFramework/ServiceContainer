@@ -46,14 +46,14 @@ class ClassIndex
                 throw new ClassIndexException(sprintf('Class "%s" does not exists', $class));
             }
 
-            $resultClassParents = class_parents($class, $autoload);
-            $resultClassImplements = class_implements($class, $autoload);
+            $parentsClasses = class_parents($class, $autoload);
+            $implementedInterfaces = class_implements($class, $autoload);
 
-            if ($resultClassParents === false || $resultClassImplements === false) {
+            if ($parentsClasses === false || $implementedInterfaces === false) {
                 throw new ClassIndexException(sprintf('Unable to get all classes of class "%s"', $class));
             }
 
-            $classes = array_merge([ltrim($class, '\\')], $resultClassParents, $resultClassImplements);
+            $classes = array_merge([ltrim($class, '\\')], $parentsClasses, $implementedInterfaces);
             $this->classes[$class] = array_unique(array_values($classes));
         }
 

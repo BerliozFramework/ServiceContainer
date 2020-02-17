@@ -15,13 +15,14 @@ declare(strict_types=1);
 namespace Berlioz\ServiceContainer;
 
 use Berlioz\ServiceContainer\Exception\NotFoundException;
+use Serializable;
 
 /**
  * Class ServiceContainer.
  *
  * @package Berlioz\ServiceContainer
  */
-class ServiceContainer implements ServiceContainerInterface, \Serializable
+class ServiceContainer implements ServiceContainerInterface, Serializable
 {
     /** @var \Berlioz\ServiceContainer\Instantiator Instantiator */
     private $instantiator;
@@ -39,7 +40,7 @@ class ServiceContainer implements ServiceContainerInterface, \Serializable
      */
     public function __construct(?Instantiator $instantiator = null)
     {
-        if (!is_null($instantiator)) {
+        if (null !== $instantiator) {
             $this->setInstantiator($instantiator);
         }
 
@@ -53,9 +54,13 @@ class ServiceContainer implements ServiceContainerInterface, \Serializable
      */
     public function serialize(): string
     {
-        return serialize(['classIndex' => $this->getInstantiator()->getClassIndex(),
-                          'classes'    => $this->classes,
-                          'services'   => $this->services]);
+        return serialize(
+            [
+                'classIndex' => $this->getInstantiator()->getClassIndex(),
+                'classes' => $this->classes,
+                'services' => $this->services
+            ]
+        );
     }
 
     /**
@@ -88,7 +93,7 @@ class ServiceContainer implements ServiceContainerInterface, \Serializable
      */
     public function getInstantiator(): Instantiator
     {
-        if (is_null($this->instantiator)) {
+        if (null === $this->instantiator) {
             $this->setInstantiator(new Instantiator(null, $this));
         }
 
