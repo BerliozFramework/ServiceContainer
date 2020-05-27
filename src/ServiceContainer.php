@@ -14,7 +14,10 @@ declare(strict_types=1);
 
 namespace Berlioz\ServiceContainer;
 
+use Berlioz\ServiceContainer\Exception\ContainerException;
 use Berlioz\ServiceContainer\Exception\NotFoundException;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Serializable;
 
 /**
@@ -24,19 +27,19 @@ use Serializable;
  */
 class ServiceContainer implements ServiceContainerInterface, Serializable
 {
-    /** @var \Berlioz\ServiceContainer\Instantiator Instantiator */
+    /** @var Instantiator Instantiator */
     private $instantiator;
     /** @var array Classes */
     private $classes = [];
-    /** @var \Berlioz\ServiceContainer\Service[] Services */
+    /** @var Service[] Services */
     private $services = [];
 
     /**
      * ServiceContainer constructor.
      *
-     * @param \Berlioz\ServiceContainer\Instantiator|null $instantiator Instantiator
+     * @param Instantiator|null $instantiator Instantiator
      *
-     * @throws \Berlioz\ServiceContainer\Exception\ContainerException
+     * @throws ContainerException
      */
     public function __construct(?Instantiator $instantiator = null)
     {
@@ -50,7 +53,7 @@ class ServiceContainer implements ServiceContainerInterface, Serializable
 
     /**
      * @inheritdoc
-     * @throws \Berlioz\ServiceContainer\Exception\ContainerException
+     * @throws ContainerException
      */
     public function serialize(): string
     {
@@ -65,7 +68,7 @@ class ServiceContainer implements ServiceContainerInterface, Serializable
 
     /**
      * @inheritdoc
-     * @throws \Berlioz\ServiceContainer\Exception\ContainerException
+     * @throws ContainerException
      */
     public function unserialize($serialized)
     {
@@ -88,8 +91,8 @@ class ServiceContainer implements ServiceContainerInterface, Serializable
     /**
      * Get instantiator.
      *
-     * @return \Berlioz\ServiceContainer\Instantiator
-     * @throws \Berlioz\ServiceContainer\Exception\ContainerException
+     * @return Instantiator
+     * @throws ContainerException
      */
     public function getInstantiator(): Instantiator
     {
@@ -103,9 +106,9 @@ class ServiceContainer implements ServiceContainerInterface, Serializable
     /**
      * Set instantiator.
      *
-     * @param \Berlioz\ServiceContainer\Instantiator $instantiator
+     * @param Instantiator $instantiator
      *
-     * @throws \Berlioz\ServiceContainer\Exception\ContainerException
+     * @throws ContainerException
      */
     private function setInstantiator(Instantiator $instantiator)
     {
@@ -143,8 +146,8 @@ class ServiceContainer implements ServiceContainerInterface, Serializable
      * @param string $id Identifier of the entry to look for.
      *
      * @return mixed Entry.
-     * @throws \Psr\Container\NotFoundExceptionInterface  No entry was found for **this** identifier.
-     * @throws \Psr\Container\ContainerExceptionInterface Error while retrieving the entry.
+     * @throws NotFoundExceptionInterface  No entry was found for **this** identifier.
+     * @throws ContainerExceptionInterface Error while retrieving the entry.
      */
     public function get($id)
     {

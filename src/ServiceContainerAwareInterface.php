@@ -24,14 +24,14 @@ interface ServiceContainerAwareInterface
     /**
      * Get service container.
      *
-     * @return \Berlioz\ServiceContainer\ServiceContainer|null
+     * @return ServiceContainer|null
      */
     public function getServiceContainer(): ?ServiceContainer;
 
     /**
      * Set service container.
      *
-     * @param \Berlioz\ServiceContainer\ServiceContainer $serviceContainer
+     * @param ServiceContainer $serviceContainer
      *
      * @return static
      */

@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Berlioz\ServiceContainer;
 
+use Berlioz\ServiceContainer\Exception\ClassIndexException;
 use Berlioz\ServiceContainer\Exception\InstantiatorException;
 use Exception;
 use Psr\Container\ContainerExceptionInterface;
@@ -32,16 +33,16 @@ use stdClass;
  */
 class Instantiator
 {
-    /** @var \Berlioz\ServiceContainer\ClassIndex Class index */
+    /** @var ClassIndex Class index */
     private $classIndex;
-    /** @var \Psr\Container\ContainerInterface Container */
+    /** @var ContainerInterface Container */
     private $container;
 
     /**
      * Instantiator constructor.
      *
-     * @param \Berlioz\ServiceContainer\ClassIndex|null $classIndex
-     * @param \Psr\Container\ContainerInterface $container
+     * @param ClassIndex|null $classIndex
+     * @param ContainerInterface $container
      */
     public function __construct(?ClassIndex $classIndex = null, ?ContainerInterface $container = null)
     {
@@ -56,7 +57,7 @@ class Instantiator
     /**
      * Get container.
      *
-     * @return null|\Psr\Container\ContainerInterface
+     * @return null|ContainerInterface
      */
     public function getContainer(): ?ContainerInterface
     {
@@ -66,7 +67,7 @@ class Instantiator
     /**
      * Set container.
      *
-     * @param \Psr\Container\ContainerInterface $container
+     * @param ContainerInterface $container
      *
      * @return static
      */
@@ -84,7 +85,7 @@ class Instantiator
     /**
      * Get class index.
      *
-     * @return \Berlioz\ServiceContainer\ClassIndex
+     * @return ClassIndex
      */
     public function getClassIndex(): ClassIndex
     {
@@ -98,7 +99,7 @@ class Instantiator
     /**
      * Set class index.
      *
-     * @param \Berlioz\ServiceContainer\ClassIndex $classIndex
+     * @param ClassIndex $classIndex
      *
      * @return static
      */
@@ -121,7 +122,7 @@ class Instantiator
      * @param bool $dependencyInjection Dependency injection? (default: true)
      *
      * @return mixed
-     * @throws \Berlioz\ServiceContainer\Exception\InstantiatorException
+     * @throws InstantiatorException
      */
     public function newInstanceOf($class, array $arguments = [], bool $dependencyInjection = true)
     {
@@ -157,7 +158,7 @@ class Instantiator
      * @param bool $dependencyInjection Dependency injection? (default: true)
      *
      * @return mixed
-     * @throws \Berlioz\ServiceContainer\Exception\InstantiatorException
+     * @throws InstantiatorException
      */
     public function invokeMethod($class, string $method, array $arguments = [], bool $dependencyInjection = true)
     {
@@ -213,7 +214,7 @@ class Instantiator
      * @param bool $dependencyInjection Dependency injection? (default: true)
      *
      * @return mixed
-     * @throws \Berlioz\ServiceContainer\Exception\InstantiatorException
+     * @throws InstantiatorException
      */
     public function invokeFunction(string $function, array $arguments = [], bool $dependencyInjection = true)
     {
@@ -241,12 +242,12 @@ class Instantiator
     /**
      * Get parameters ordered to inject.
      *
-     * @param \ReflectionFunctionAbstract $reflectionFunction
+     * @param ReflectionFunctionAbstract $reflectionFunction
      * @param array $arguments
      *
      * @return array Parameters (ordered)
-     * @throws \Berlioz\ServiceContainer\Exception\ClassIndexException
-     * @throws \Berlioz\ServiceContainer\Exception\InstantiatorException
+     * @throws ClassIndexException
+     * @throws InstantiatorException
      */
     private function getDependencyInjectionParameters(
         ReflectionFunctionAbstract $reflectionFunction,
@@ -295,13 +296,13 @@ class Instantiator
     /**
      * Get parameter value for injection.
      *
-     * @param \ReflectionFunctionAbstract $reflectionFunction
-     * @param \ReflectionParameter $reflectionParameter
+     * @param ReflectionFunctionAbstract $reflectionFunction
+     * @param ReflectionParameter $reflectionParameter
      * @param array $arguments
      * @param array $argumentsClass
      *
      * @return mixed|null
-     * @throws \Berlioz\ServiceContainer\Exception\InstantiatorException
+     * @throws InstantiatorException
      */
     private function getDependencyInjectionParameter(
         ReflectionFunctionAbstract $reflectionFunction,
@@ -377,7 +378,7 @@ class Instantiator
                 sprintf(
                     'Missing parameter "%s" of "%s"',
                     $reflectionParameter->getName(),
-                    $reflectionParameter->getName()
+                    $reflectionFunction->getName()
                 )
             );
         }

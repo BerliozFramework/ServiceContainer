@@ -33,7 +33,7 @@ class ClassIndex
      * @param bool $autoload Auto load
      *
      * @return array
-     * @throws \Berlioz\ServiceContainer\Exception\ClassIndexException
+     * @throws ClassIndexException
      */
     public function getAllClasses($class, bool $autoload = true): array
     {

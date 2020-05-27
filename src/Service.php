@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Berlioz\ServiceContainer;
 
 use Berlioz\ServiceContainer\Exception\ContainerException;
+use Berlioz\ServiceContainer\Exception\InstantiatorException;
 use Serializable;
 
 /**
@@ -47,7 +48,7 @@ class Service implements Serializable
      * @param string|object $class
      * @param null|string $alias
      *
-     * @throws \Berlioz\ServiceContainer\Exception\ContainerException
+     * @throws ContainerException
      */
     public function __construct($class, ?string $alias = null)
     {
@@ -140,7 +141,7 @@ class Service implements Serializable
      * @param string $name
      * @param mixed $value
      *
-     * @return \Berlioz\ServiceContainer\Service
+     * @return Service
      */
     public function addArgument(string $name, $value): Service
     {
@@ -154,7 +155,7 @@ class Service implements Serializable
      *
      * @param mixed[] $arguments
      *
-     * @return \Berlioz\ServiceContainer\Service
+     * @return Service
      */
     public function addArguments(array $arguments): Service
     {
@@ -169,7 +170,7 @@ class Service implements Serializable
      * @param string $method
      * @param mixed[] $arguments
      *
-     * @return \Berlioz\ServiceContainer\Service
+     * @return Service
      */
     public function addCall(string $method, array $arguments = []): Service
     {
@@ -183,8 +184,8 @@ class Service implements Serializable
      *
      * @param string $factory
      *
-     * @return \Berlioz\ServiceContainer\Service
-     * @throws \Berlioz\ServiceContainer\Exception\ContainerException
+     * @return Service
+     * @throws ContainerException
      */
     public function setFactory(string $factory): Service
     {
@@ -204,11 +205,11 @@ class Service implements Serializable
     /**
      * Get service.
      *
-     * @param \Berlioz\ServiceContainer\Instantiator $instantiator
+     * @param Instantiator $instantiator
      *
      * @return object
-     * @throws \Berlioz\ServiceContainer\Exception\ContainerException
-     * @throws \Berlioz\ServiceContainer\Exception\InstantiatorException
+     * @throws ContainerException
+     * @throws InstantiatorException
      */
     public function get(Instantiator $instantiator)
     {

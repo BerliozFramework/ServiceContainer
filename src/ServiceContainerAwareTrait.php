@@ -19,13 +19,13 @@ namespace Berlioz\ServiceContainer;
  */
 trait ServiceContainerAwareTrait
 {
-    /** @var \Berlioz\ServiceContainer\ServiceContainer Service container */
+    /** @var ServiceContainer Service container */
     private $serviceContainer;
 
     /**
      * Get service container.
      *
-     * @return \Berlioz\ServiceContainer\ServiceContainer|null
+     * @return ServiceContainer|null
      */
     public function getServiceContainer(): ?ServiceContainer
     {
@@ -35,7 +35,7 @@ trait ServiceContainerAwareTrait
     /**
      * Set service container.
      *
-     * @param \Berlioz\ServiceContainer\ServiceContainer $serviceContainer
+     * @param ServiceContainer $serviceContainer
      *
      * @return static
      */
