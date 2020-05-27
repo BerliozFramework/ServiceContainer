@@ -42,6 +42,12 @@ class ServiceContainerTest extends TestCase
                                  "nb" => 5,
                              ],
                          ],
+                         [
+                             "method"    => "increaseParam3",
+                             "arguments" => [
+                                 "nb" => 5,
+                             ],
+                         ],
                      ]],
                 "aliasService1X" =>
                     ["class"     => Service1::class,
@@ -119,7 +125,7 @@ class ServiceContainerTest extends TestCase
     {
         $serviceContainer = self::getServiceContainer();
         $serviceObj1 = $serviceContainer->get('aliasService1');
-        $this->assertEquals(6, $serviceObj1->getParam3());
+        $this->assertEquals(11, $serviceObj1->getParam3());
     }
 
     public function testRecursivelyServices()

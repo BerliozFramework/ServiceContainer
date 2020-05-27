@@ -174,7 +174,7 @@ class Service implements Serializable
      */
     public function addCall(string $method, array $arguments = []): Service
     {
-        $this->calls[$method] = $arguments;
+        $this->calls[] = [$method, $arguments];
 
         return $this;
     }
@@ -249,8 +249,8 @@ class Service implements Serializable
         }
 
         // Calls
-        foreach ($this->calls ?? [] as $method => $args) {
-            $instantiator->invokeMethod($this->object, $method, $args ?? []);
+        foreach ($this->calls ?? [] as $call) {
+            $instantiator->invokeMethod($this->object, $call[0], $call[1] ?? []);
         }
 
         return $this->object;
