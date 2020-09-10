@@ -24,6 +24,7 @@ use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
 use ReflectionParameter;
+use ReflectionUnionType;
 use stdClass;
 
 /**
@@ -320,41 +321,47 @@ class Instantiator
             return $parameter;
         }
 
-        // Parameter is class?
-        if ($reflectionParameter->hasType() && !$reflectionParameter->getType()->isBuiltin()) {
-            // Parameter type is in arguments class?
-            if (array_key_exists($reflectionParameter->getType()->getName(), $argumentsClass)) {
-                $argumentsFound = $argumentsClass[$reflectionParameter->getType()->getName()];
+        if (!($types = $reflectionParameter->getType()) instanceof ReflectionUnionType) {
+            $types = [$types];
+        }
 
-                // Argument is already available?
-                if (($argumentFound = reset($argumentsFound)) !== false && isset($arguments[$argumentFound])) {
-                    $parameter = $arguments[$argumentFound];
+        foreach ($types as $type) {
+            // Parameter is class?
+            if ($reflectionParameter->hasType() && !$type->isBuiltin()) {
+                // Parameter type is in arguments class?
+                if (array_key_exists($type->getName(), $argumentsClass)) {
+                    $argumentsFound = $argumentsClass[$type->getName()];
 
-                    // Remove argument to do not use again
-                    unset($arguments[$argumentFound]);
+                    // Argument is already available?
+                    if (($argumentFound = reset($argumentsFound)) !== false && isset($arguments[$argumentFound])) {
+                        $parameter = $arguments[$argumentFound];
 
-                    return $parameter;
-                }
-            }
+                        // Remove argument to do not use again
+                        unset($arguments[$argumentFound]);
 
-            if (null !== $this->getContainer()) {
-                // Service exists with the same name and same type?
-                if ($this->getContainer()->has($reflectionParameter->getName())
-                    && is_a(
-                        $service = $this->getContainer()->get($reflectionParameter->getName()),
-                        $reflectionParameter->getType()->getName()
-                    )) {
-                    return $service;
+                        return $parameter;
+                    }
                 }
 
-                // Service exists with same class?
-                try {
-                    $service = $this->getContainer()->get($reflectionParameter->getType()->getName());
-
-                    if (is_a($service, $reflectionParameter->getType()->getName())) {
+                if (null !== $this->getContainer()) {
+                    // Service exists with the same name and same type?
+                    if ($this->getContainer()->has($reflectionParameter->getName())
+                        && is_a(
+                            $service = $this->getContainer()->get($reflectionParameter->getName()),
+                            $type->getName()
+                        )) {
                         return $service;
                     }
-                } catch (ContainerExceptionInterface $e) {
+
+                    // Service exists with same class?
+                    try {
+                        $service = $this->getContainer()->get($type->getName());
+
+                        if (is_a($service, $type->getName())) {
+                            return $service;
+                        }
+                    } catch (ContainerExceptionInterface $e) {
+                    }
                 }
             }
         }
@@ -363,24 +370,30 @@ class Instantiator
             try {
                 return $reflectionParameter->getDefaultValue();
             } catch (Exception $e) {
-                throw new InstantiatorException(
-                    sprintf(
-                        'Unable to get default value of parameter "%s" of "%s"',
-                        $reflectionParameter->getName(),
-                        $reflectionFunction->getName()
-                    )
+                $message = sprintf(
+                    'Unable to get default value of parameter "%s" of "%s"',
+                    $reflectionParameter->getName(),
+                    $reflectionFunction->getName()
                 );
+                if ($reflectionFunction instanceof ReflectionMethod) {
+                    $message .= sprintf(' in class "%s"', $reflectionFunction->getDeclaringClass()->getName());
+                }
+
+                throw new InstantiatorException($message);
             }
         }
 
         if (!$reflectionParameter->allowsNull()) {
-            throw new InstantiatorException(
-                sprintf(
-                    'Missing parameter "%s" of "%s"',
-                    $reflectionParameter->getName(),
-                    $reflectionFunction->getName()
-                )
+            $message = sprintf(
+                'Missing parameter "%s" of "%s"',
+                $reflectionParameter->getName(),
+                $reflectionFunction->getName()
             );
+            if ($reflectionFunction instanceof ReflectionMethod) {
+                $message .= sprintf(' in class "%s"', $reflectionFunction->getDeclaringClass()->getName());
+            }
+
+            throw new InstantiatorException($message);
         }
 
         return null;
