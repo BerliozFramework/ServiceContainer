@@ -321,7 +321,9 @@ class Instantiator
             return $parameter;
         }
 
-        if (!($types = $reflectionParameter->getType()) instanceof ReflectionUnionType) {
+        $types = $reflectionParameter->getType();
+        if (!class_exists('\ReflectionUnionType') ||
+            !($types = $reflectionParameter->getType()) instanceof ReflectionUnionType) {
             $types = [$types];
         }
 

@@ -20,6 +20,7 @@ use Berlioz\ServiceContainer\Tests\files\Service1;
 use Berlioz\ServiceContainer\Tests\files\Service2;
 use Berlioz\ServiceContainer\Tests\files\Service3;
 use Berlioz\ServiceContainer\Tests\files\Service4;
+use Berlioz\ServiceContainer\Tests\files\Service9;
 use PHPUnit\Framework\TestCase;
 
 class InstantiatorTest extends TestCase
@@ -111,6 +112,25 @@ class InstantiatorTest extends TestCase
 
         $service = $instantiator->newInstanceOf(Service4::class);
         $this->assertInstanceOf(Service4::class, $service);
+    }
+
+    /**
+     * @throws \Psr\Container\ContainerExceptionInterface
+     * @requires PHP 7.8
+     */
+    public function testNewInstanceOf_withUnionTypes()
+    {
+        $serviceContainer = ServiceContainerTest::getServiceContainer();
+        $instantiator = new Instantiator(null, $serviceContainer);
+        $result = $instantiator->newInstanceOf(
+            Service9::class,
+            [
+                'param1' => $service4 = new Service4(),
+                'param2' => 2,
+            ]
+        );
+        $this->assertSame($service4, $result->param1);
+        $this->assertSame(2, $result->param2);
     }
 
     /**
