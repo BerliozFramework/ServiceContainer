@@ -24,7 +24,7 @@ class ContainerTest extends TestCase
         );
 
         $this->assertCount(2, iterator_to_array($container->getContainers(), false));
-        $this->assertCount(2, $container->getInflectors());
+        $this->assertCount(3, $container->getInflectors());
     }
 
     public function testCall()
@@ -141,6 +141,6 @@ class ContainerTest extends TestCase
         $container = new FakeContainer();
         $container->addInflector(new Inflector(stdClass::class, 'myMethod'));
 
-        $this->assertCount(2, $container->getInflectors());
+        $this->assertCount(3, $container->getInflectors());
     }
 }
