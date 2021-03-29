@@ -14,14 +14,47 @@ declare(strict_types=1);
 
 namespace Berlioz\ServiceContainer\Exception;
 
+use Berlioz\ServiceContainer\Service\Service;
 use Exception;
 use Psr\Container\ContainerExceptionInterface;
+use Throwable;
 
 /**
  * Class ContainerException.
- *
- * @package Berlioz\ServiceContainer\Exception
  */
 class ContainerException extends Exception implements ContainerExceptionInterface
 {
+    /**
+     * Instantiation.
+     *
+     * @param string $id
+     * @param Throwable $exception
+     *
+     * @return static
+     */
+    public static function instantiation(string $id, Throwable $exception): static
+    {
+        return new static(sprintf('Error during instantiation of service "%s"', $id), 0, $exception);
+    }
+
+    /**
+     * Excepted factory.
+     *
+     * @param Service $service
+     * @param mixed $actual
+     *
+     * @return static
+     */
+    public static function exceptedFactory(Service $service, mixed $actual): static
+    {
+        return new static(
+            sprintf(
+                'Excepted "%s" class from factory "%s" of service "%s", actual "%s" class',
+                $service->getClass(),
+                get_debug_type($service->getFactory()),
+                $service->getAlias(),
+                get_debug_type($actual),
+            )
+        );
+    }
 }

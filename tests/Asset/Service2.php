@@ -10,7 +10,7 @@
  * file that was distributed with this source code, to the root.
  */
 
-namespace Berlioz\ServiceContainer\Tests\files;
+namespace Berlioz\ServiceContainer\Tests\Asset;
 
 
 class Service2 implements ServiceInterface

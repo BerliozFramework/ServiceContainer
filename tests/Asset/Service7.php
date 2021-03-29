@@ -10,15 +10,12 @@
  * file that was distributed with this source code, to the root.
  */
 
-declare(strict_types=1);
+namespace Berlioz\ServiceContainer\Tests\Asset;
 
-namespace Berlioz\ServiceContainer\Exception;
 
-/**
- * Class ClassIndexException.
- *
- * @package Berlioz\ServiceContainer\Exception
- */
-class ClassIndexException extends ContainerException
+class Service7
 {
+    public function __construct(WithDependency $service6)
+    {
+    }
 }

@@ -14,101 +14,60 @@ declare(strict_types=1);
 
 namespace Berlioz\ServiceContainer;
 
-use Berlioz\ServiceContainer\Exception\ClassIndexException;
+use Berlioz\ServiceContainer\Exception\ArgumentException;
+use Berlioz\ServiceContainer\Exception\ContainerException;
 use Berlioz\ServiceContainer\Exception\InstantiatorException;
-use Exception;
-use Psr\Container\ContainerExceptionInterface;
+use Closure;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
+use ReflectionNamedType;
 use ReflectionParameter;
+use ReflectionType;
 use ReflectionUnionType;
-use stdClass;
+use Throwable;
 
 /**
  * Class Instantiator.
- *
- * @package Berlioz\ServiceContainer
  */
 class Instantiator
 {
-    /** @var ClassIndex Class index */
-    private $classIndex;
-    /** @var ContainerInterface Container */
-    private $container;
-
     /**
      * Instantiator constructor.
      *
-     * @param ClassIndex|null $classIndex
-     * @param ContainerInterface $container
+     * @param ContainerInterface|null $container
      */
-    public function __construct(?ClassIndex $classIndex = null, ?ContainerInterface $container = null)
+    public function __construct(protected ?ContainerInterface $container = null)
     {
-        $this->classIndex = $classIndex;
-        $this->container = $container;
-    }
-
-    /////////////////
-    /// CONTAINER ///
-    /////////////////
-
-    /**
-     * Get container.
-     *
-     * @return null|ContainerInterface
-     */
-    public function getContainer(): ?ContainerInterface
-    {
-        return $this->container;
     }
 
     /**
-     * Set container.
+     * Call.
      *
-     * @param ContainerInterface $container
+     * @param string|Closure $subject
+     * @param array $arguments
+     * @param bool $autoWiring
      *
-     * @return static
+     * @return mixed
+     * @throws ContainerException
      */
-    public function setContainer(ContainerInterface $container): Instantiator
+    public function call(string|Closure $subject, array $arguments = [], bool $autoWiring = true): mixed
     {
-        $this->container = $container;
-
-        return $this;
-    }
-
-    ///////////////////
-    /// CLASS INDEX ///
-    ///////////////////
-
-    /**
-     * Get class index.
-     *
-     * @return ClassIndex
-     */
-    public function getClassIndex(): ClassIndex
-    {
-        if (null === $this->classIndex) {
-            $this->classIndex = new ClassIndex();
+        // Function?
+        if (is_callable($subject)) {
+            return $this->invokeFunction($subject, $arguments, $autoWiring);
         }
 
-        return $this->classIndex;
-    }
+        // Method
+        if (true === str_contains($subject, '::')) {
+            $subject = explode('::', $subject, 2);
 
-    /**
-     * Set class index.
-     *
-     * @param ClassIndex $classIndex
-     *
-     * @return static
-     */
-    public function setClassIndex(ClassIndex $classIndex): Instantiator
-    {
-        $this->classIndex = $classIndex;
+            return $this->invokeMethod($subject[0], $subject[1], $arguments, $autoWiring);
+        }
 
-        return $this;
+        return $this->newInstanceOf($subject, $arguments, $autoWiring);
     }
 
     ////////////////////////////
@@ -120,12 +79,12 @@ class Instantiator
      *
      * @param object|string $class Class name or object
      * @param array $arguments Arguments
-     * @param bool $dependencyInjection Dependency injection? (default: true)
+     * @param bool $autoWiring
      *
-     * @return mixed
-     * @throws InstantiatorException
+     * @return object
+     * @throws ContainerException
      */
-    public function newInstanceOf($class, array $arguments = [], bool $dependencyInjection = true)
+    public function newInstanceOf(object|string $class, array $arguments = [], bool $autoWiring = true): object
     {
         try {
             // Reflection of class
@@ -133,21 +92,17 @@ class Instantiator
 
             if (null !== ($constructor = $reflectionClass->getConstructor())) {
                 // Dependency injection?
-                if ($dependencyInjection) {
-                    $arguments = $this->getDependencyInjectionParameters($constructor, $arguments);
+                if ($autoWiring) {
+                    $arguments = $this->getArguments($constructor, $arguments);
                 }
+
+                return $reflectionClass->newInstanceArgs($arguments);
             }
-        } catch (InstantiatorException $e) {
-            throw $e;
-        } catch (Exception $e) {
-            throw new InstantiatorException(sprintf('Error during dependency injection of class "%s"', $class), 0, $e);
-        }
 
-        if (null === $constructor) {
             return $reflectionClass->newInstanceWithoutConstructor();
+        } catch (Throwable $exception) {
+            throw InstantiatorException::classError($class, $exception);
         }
-
-        return $reflectionClass->newInstanceArgs($arguments);
     }
 
     /**
@@ -156,248 +111,158 @@ class Instantiator
      * @param object|string $class Class or object
      * @param string $method Method name
      * @param array $arguments Arguments
-     * @param bool $dependencyInjection Dependency injection? (default: true)
+     * @param bool $autoWiring
      *
      * @return mixed
-     * @throws InstantiatorException
+     * @throws ContainerException
      */
-    public function invokeMethod($class, string $method, array $arguments = [], bool $dependencyInjection = true)
-    {
-        // Check validity of first argument
-        if (!(is_object($class) || (is_string($class) && class_exists($class)))) {
-            throw new InstantiatorException(
-                sprintf('First argument must be a valid class name or an object, %s given', gettype($class))
-            );
-        }
-
+    public function invokeMethod(
+        object|string $class,
+        string $method,
+        array $arguments = [],
+        bool $autoWiring = true
+    ): mixed {
         try {
             // Reflection of method
             $reflectionMethod = new ReflectionMethod($class, $method);
 
-            // Create object from class
-            if (!$reflectionMethod->isStatic() && is_string($class)) {
-                throw new InstantiatorException(
-                    'First argument must be an object if you want call a non static method'
-                );
-            }
-
             // Dependency injection?
-            if ($dependencyInjection) {
-                $arguments = $this->getDependencyInjectionParameters($reflectionMethod, $arguments);
+            if ($autoWiring) {
+                $arguments = $this->getArguments($reflectionMethod, $arguments);
             }
-        } catch (InstantiatorException $e) {
-            throw $e;
-        } catch (Exception $e) {
-            throw new InstantiatorException(
-                sprintf(
-                    'Error during dependency injection of method "%s::%s"',
-                    is_object($class) ? get_class($class) : $class,
-                    $method
-                ), 0, $e
-            );
-        }
 
-        // Static method
-        if ($reflectionMethod->isStatic()) {
-            return $reflectionMethod->invokeArgs(null, $arguments);
-        }
+            // Static method
+            if ($reflectionMethod->isStatic()) {
+                return $reflectionMethod->invokeArgs(null, $arguments);
+            }
 
-        /** @var object $class */
-        // Non static method
-        return $reflectionMethod->invokeArgs($class, $arguments);
+            // Get instance into container
+            if (is_string($class)) {
+                if (true === $this->container?->has($class)) {
+                    $class = $this->container->get($class);
+                }
+            }
+
+            // Create new instance of class if not object
+            if (is_string($class)) {
+                $class = $this->newInstanceOf($class);
+            }
+
+            return $reflectionMethod->invokeArgs($class, $arguments);
+        } catch (Throwable $exception) {
+            throw InstantiatorException::methodError($class, $method, $exception);
+        }
     }
 
     /**
      * Invocation of function.
      *
-     * @param string $function Function name
+     * @param string|Closure $function Function name
      * @param array $arguments Arguments
-     * @param bool $dependencyInjection Dependency injection? (default: true)
+     * @param bool $autoWiring
      *
      * @return mixed
-     * @throws InstantiatorException
+     * @throws ContainerException
      */
-    public function invokeFunction(string $function, array $arguments = [], bool $dependencyInjection = true)
+    public function invokeFunction(string|Closure $function, array $arguments = [], bool $autoWiring = true): mixed
     {
         try {
             // Reflection of function
             $reflectionFunction = new ReflectionFunction($function);
 
             // Dependency injection?
-            if ($dependencyInjection) {
-                $arguments = $this->getDependencyInjectionParameters($reflectionFunction, $arguments);
+            if ($autoWiring) {
+                $arguments = $this->getArguments($reflectionFunction, $arguments);
             }
-        } catch (InstantiatorException $e) {
-            throw $e;
-        } catch (Exception $e) {
-            throw new InstantiatorException(
-                sprintf('Error during dependency injection of function "%s"', $function),
-                0,
-                $e
-            );
-        }
 
-        return $reflectionFunction->invokeArgs($arguments);
+            return $reflectionFunction->invokeArgs($arguments);
+        } catch (Throwable $exception) {
+            throw InstantiatorException::functionError($function, $exception);
+        }
     }
 
     /**
-     * Get parameters ordered to inject.
+     * Get arguments to inject.
      *
      * @param ReflectionFunctionAbstract $reflectionFunction
      * @param array $arguments
      *
-     * @return array Parameters (ordered)
-     * @throws ClassIndexException
-     * @throws InstantiatorException
+     * @return array
+     * @throws ArgumentException
+     * @throws ContainerException
      */
-    private function getDependencyInjectionParameters(
+    protected function getArguments(
         ReflectionFunctionAbstract $reflectionFunction,
         array $arguments = []
     ): array {
-        $parameters = [];
-
-        // Treat arguments
-        $argumentsClass = [];
-        foreach ($arguments as $name => &$argument) {
-            if (null !== $this->getContainer()) {
-                // Service recursively
-                if (is_string($argument) && substr($argument, 0, 1) == '@') {
-                    $subServiceName = substr($argument, 1);
-                    $argument = $this->getContainer()->get($subServiceName);
-                }
-            }
-
-            // Get all classes of argument if it's an object.
-            // It's necessary to know if argument can match with an injection.
-            if (is_object($argument) && !($argument instanceof stdClass)) {
-                foreach ($this->getClassIndex()->getAllClasses($argument) as $class) {
-                    $argumentsClass[$class][] = $name;
-                }
-            }
-        }
-
-        // Try to get all parameters values
         foreach ($reflectionFunction->getParameters() as $reflectionParameter) {
-            if (!$reflectionParameter instanceof ReflectionParameter) {
+            // Argument already given
+            if (array_key_exists($reflectionParameter->getName(), $arguments)) {
+                $argument = &$arguments[$reflectionParameter->getName()];
+
+                if (is_string($argument)) {
+                    // It's an alias?
+                    if (str_starts_with($argument, '@')) {
+                        if (true === $this->container?->has(substr($argument, 1))) {
+                            $argument = $this->container->get(substr($argument, 1));
+                        }
+                    }
+                }
                 continue;
             }
 
-            $parameters[$reflectionParameter->getName()] =
-                $this->getDependencyInjectionParameter(
-                    $reflectionFunction,
-                    $reflectionParameter,
-                    $arguments,
-                    $argumentsClass
-                );
+            // Search with types
+            if (true === $reflectionParameter->hasType()) {
+                foreach ($this->getParameterTypes($reflectionParameter) as $reflectionType) {
+                    if (true === $reflectionType->isBuiltin()) {
+                        continue;
+                    }
+
+                    if (true === $this->container?->has($reflectionType->getName())) {
+                        $arguments[$reflectionParameter->getName()] = $this->container->get($reflectionType->getName());
+                        continue 2;
+                    }
+
+                    $arguments[$reflectionParameter->getName()] = $this->newInstanceOf($reflectionType->getName());
+                }
+            }
+
+            // Skip if default value available
+            if ($reflectionParameter->isDefaultValueAvailable()) {
+                continue;
+            }
+
+            // Allows null value?
+            if (true === $reflectionParameter->allowsNull()) {
+                $arguments[$reflectionParameter->getName()] = null;
+                continue;
+            }
+
+            throw ArgumentException::missingArgument($reflectionParameter->getName());
         }
 
-        return $parameters;
+        return $arguments;
     }
 
     /**
-     * Get parameter value for injection.
+     * Get parameter types.
      *
-     * @param ReflectionFunctionAbstract $reflectionFunction
-     * @param ReflectionParameter $reflectionParameter
-     * @param array $arguments
-     * @param array $argumentsClass
+     * @param ReflectionParameter $parameter
      *
-     * @return mixed|null
-     * @throws InstantiatorException
+     * @return ReflectionNamedType[]
      */
-    private function getDependencyInjectionParameter(
-        ReflectionFunctionAbstract $reflectionFunction,
-        ReflectionParameter $reflectionParameter,
-        array &$arguments,
-        array $argumentsClass
-    ) {
-        // Parameter name in arguments list?
-        if (array_key_exists($reflectionParameter->getName(), $arguments)) {
-            $parameter = $arguments[$reflectionParameter->getName()];
+    protected function getParameterTypes(ReflectionParameter $parameter): array
+    {
+        $type = $parameter->getType();
 
-            // Remove argument to do not use again
-            unset($arguments[$reflectionParameter->getName()]);
-
-            return $parameter;
+        if ($type instanceof ReflectionType) {
+            return [$type];
         }
 
-        $types = $reflectionParameter->getType();
-        if (!class_exists('\ReflectionUnionType') ||
-            !($types = $reflectionParameter->getType()) instanceof ReflectionUnionType) {
-            $types = [$types];
+        if ($type instanceof ReflectionUnionType) {
+            return $type->getTypes();
         }
 
-        foreach ($types as $type) {
-            // Parameter is class?
-            if ($reflectionParameter->hasType() && !$type->isBuiltin()) {
-                // Parameter type is in arguments class?
-                if (array_key_exists($type->getName(), $argumentsClass)) {
-                    $argumentsFound = $argumentsClass[$type->getName()];
-
-                    // Argument is already available?
-                    if (($argumentFound = reset($argumentsFound)) !== false && isset($arguments[$argumentFound])) {
-                        $parameter = $arguments[$argumentFound];
-
-                        // Remove argument to do not use again
-                        unset($arguments[$argumentFound]);
-
-                        return $parameter;
-                    }
-                }
-
-                if (null !== $this->getContainer()) {
-                    // Service exists with the same name and same type?
-                    if ($this->getContainer()->has($reflectionParameter->getName())
-                        && is_a(
-                            $service = $this->getContainer()->get($reflectionParameter->getName()),
-                            $type->getName()
-                        )) {
-                        return $service;
-                    }
-
-                    // Service exists with same class?
-                    try {
-                        $service = $this->getContainer()->get($type->getName());
-
-                        if (is_a($service, $type->getName())) {
-                            return $service;
-                        }
-                    } catch (ContainerExceptionInterface $e) {
-                    }
-                }
-            }
-        }
-
-        if ($reflectionParameter->isDefaultValueAvailable()) {
-            try {
-                return $reflectionParameter->getDefaultValue();
-            } catch (Exception $e) {
-                $message = sprintf(
-                    'Unable to get default value of parameter "%s" of "%s"',
-                    $reflectionParameter->getName(),
-                    $reflectionFunction->getName()
-                );
-                if ($reflectionFunction instanceof ReflectionMethod) {
-                    $message .= sprintf(' in class "%s"', $reflectionFunction->getDeclaringClass()->getName());
-                }
-
-                throw new InstantiatorException($message);
-            }
-        }
-
-        if (!$reflectionParameter->allowsNull()) {
-            $message = sprintf(
-                'Missing parameter "%s" of "%s"',
-                $reflectionParameter->getName(),
-                $reflectionFunction->getName()
-            );
-            if ($reflectionFunction instanceof ReflectionMethod) {
-                $message .= sprintf(' in class "%s"', $reflectionFunction->getDeclaringClass()->getName());
-            }
-
-            throw new InstantiatorException($message);
-        }
-
-        return null;
+        return [];
     }
 }

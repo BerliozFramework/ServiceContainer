@@ -10,12 +10,9 @@
  * file that was distributed with this source code, to the root.
  */
 
-namespace Berlioz\ServiceContainer\Tests\files;
+namespace Berlioz\ServiceContainer\Tests\Asset;
 
 
-class Service7
+interface ServiceInterface
 {
-    public function __construct(Service6 $service6)
-    {
-    }
 }

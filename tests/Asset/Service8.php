@@ -10,18 +10,12 @@
  * file that was distributed with this source code, to the root.
  */
 
-namespace Berlioz\ServiceContainer\Tests\files;
+namespace Berlioz\ServiceContainer\Tests\Asset;
 
 
-class Service4
+class Service8
 {
-    public $param1;
-    public $param2;
-    public $param3;
-    public $param4;
-
-    public function test()
+    public function __construct(\PDO $pdo)
     {
-        return sprintf('It\'s a test "%s"', static::class);
     }
 }

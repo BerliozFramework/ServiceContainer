@@ -10,12 +10,13 @@
  * file that was distributed with this source code, to the root.
  */
 
-namespace Berlioz\ServiceContainer\Tests\files;
+declare(strict_types=1);
 
+namespace Berlioz\ServiceContainer\Tests\Asset;
 
-class Service8
+class WithDependency
 {
-    public function __construct(\PDO $pdo)
+    public function __construct(public WithoutConstructor $param)
     {
     }
 }

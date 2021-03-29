@@ -14,23 +14,33 @@ declare(strict_types=1);
 
 namespace Berlioz\ServiceContainer;
 
-use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\ContainerInterface;
-
 /**
- * Interface ServiceContainerInterface.
+ * Interface ContainerAwareInterface.
  *
  * @package Berlioz\ServiceContainer
  */
-interface ServiceContainerInterface extends ContainerInterface
+interface ContainerAwareInterface
 {
     /**
-     * Add a service.
+     * Get container.
      *
-     * @param Service $service
+     * @return Container|null
+     */
+    public function getContainer(): ?Container;
+
+    /**
+     * Set container.
+     *
+     * @param Container $container
      *
      * @return static
-     * @throws ContainerExceptionInterface
      */
-    public function add(Service $service): ServiceContainerInterface;
+    public function setContainer(Container $container): static;
+
+    /**
+     * Has container?
+     *
+     * @return bool
+     */
+    public function hasContainer(): bool;
 }

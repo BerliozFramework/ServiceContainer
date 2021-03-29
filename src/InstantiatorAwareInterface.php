@@ -15,32 +15,30 @@ declare(strict_types=1);
 namespace Berlioz\ServiceContainer;
 
 /**
- * Interface ServiceContainerAwareInterface.
- *
- * @package Berlioz\ServiceContainer
+ * Interface InstantiatorAwareInterface.
  */
-interface ServiceContainerAwareInterface
+interface InstantiatorAwareInterface
 {
     /**
-     * Get service container.
+     * Get instantiator.
      *
-     * @return ServiceContainer|null
+     * @return Instantiator|null
      */
-    public function getServiceContainer(): ?ServiceContainer;
+    public function getInstantiator(): ?Instantiator;
 
     /**
-     * Set service container.
+     * Set instantiator.
      *
-     * @param ServiceContainer $serviceContainer
+     * @param Instantiator $instantiator
      *
      * @return static
      */
-    public function setServiceContainer(ServiceContainer $serviceContainer);
+    public function setInstantiator(Instantiator $instantiator): static;
 
     /**
-     * Has service container?
+     * Has instantiator?
      *
      * @return bool
      */
-    public function hasServiceContainer(): bool;
+    public function hasInstantiator(): bool;
 }

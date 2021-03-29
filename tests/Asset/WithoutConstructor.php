@@ -10,12 +10,14 @@
  * file that was distributed with this source code, to the root.
  */
 
-namespace Berlioz\ServiceContainer\Tests\files;
+declare(strict_types=1);
 
+namespace Berlioz\ServiceContainer\Tests\Asset;
 
-class Service6
+class WithoutConstructor
 {
-    public function __construct(Service5 $service5)
+    public function test()
     {
+        return sprintf('It\'s a test "%s"', static::class);
     }
 }

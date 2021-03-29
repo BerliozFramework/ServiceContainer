@@ -18,9 +18,30 @@ use Psr\Container\NotFoundExceptionInterface;
 
 /**
  * Class NotFoundException.
- *
- * @package Berlioz\ServiceContainer\Exception
  */
 class NotFoundException extends ContainerException implements NotFoundExceptionInterface
 {
+    /**
+     * Not found.
+     *
+     * @param string $id
+     *
+     * @return static
+     */
+    public static function notFound(string $id): static
+    {
+        return new static(sprintf('Service "%s" not found in container', $id));
+    }
+
+    /**
+     * Class does not exists.
+     *
+     * @param string $class
+     *
+     * @return static
+     */
+    public static function classDoesNotExists(string $class): static
+    {
+        return new static(sprintf('Class "%s" does not exists', $class));
+    }
 }
