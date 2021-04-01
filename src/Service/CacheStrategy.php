@@ -42,9 +42,18 @@ class CacheStrategy
                 return null;
             }
 
-            return $this->cache->get($this->getCacheKey($service));
+            $object = $this->cache->get($this->getCacheKey($service));
+
+            if (!is_a($object, $service->getClass())) {
+                throw new ContainerException(sprintf('Cache integrity of service "%s"', $service->getAlias()));
+            }
+
+            return $object;
         } catch (InvalidArgumentException $exception) {
-            throw new ContainerException('Error during cache read', 0, $exception);
+            throw new ContainerException(
+                sprintf('Error during cache read of service "%s"', $service->getAlias()),
+                exception: $exception
+            );
         }
     }
 
