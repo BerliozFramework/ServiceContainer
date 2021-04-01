@@ -27,7 +27,6 @@ class Service
     protected array $arguments = [];
     protected array $calls = [];
     protected ?object $object = null;
-    protected bool $initialized = false;
     protected bool $initialization = false;
 
     /**
@@ -47,8 +46,8 @@ class Service
         // Get class name of object
         if (is_object($class)) {
             $this->object = $class;
-            $this->initialized = true;
             $class = get_class($class);
+            $this->initialization = true;
         }
 
         $this->class = $class;
@@ -224,7 +223,8 @@ class Service
 
         // Get from cache
         if (null !== ($object = $this->cacheStrategy?->get($this))) {
-            $this->calls($object, $instantiator);
+            $this->object = $object;
+            $this->calls($this->object, $instantiator);
 
             return $object;
         }
@@ -240,7 +240,7 @@ class Service
                 }
 
                 $this->object = $object;
-                $this->calls($object, $instantiator);
+                $this->calls($this->object, $instantiator);
                 $this->cacheStrategy?->set($this, $object);
 
                 return $object;
