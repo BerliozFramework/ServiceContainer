@@ -56,7 +56,7 @@ class Instantiator
     public function call(string|Closure $subject, array $arguments = [], bool $autoWiring = true): mixed
     {
         // Function?
-        if (is_callable($subject)) {
+        if ($subject instanceof Closure || function_exists($subject)) {
             return $this->invokeFunction($subject, $arguments, $autoWiring);
         }
 

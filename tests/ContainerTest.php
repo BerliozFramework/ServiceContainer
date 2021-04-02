@@ -46,6 +46,10 @@ class ContainerTest extends TestCase
             sprintf('It\'s a test "%s"', Service4::class),
             $container->call(sprintf('%s::test', Service4::class))
         );
+        $this->assertEquals(
+            sprintf('It\'s a test "%s"', Service4::class),
+            $container->call(sprintf('%s::testStatic', Service4::class))
+        );
 
         $this->assertInstanceOf(
             ContainerAwareInterface::class,

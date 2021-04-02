@@ -119,6 +119,7 @@ class Container implements ContainerInterface
      */
     public function get($id): object
     {
+        /** @var ContainerInterface $container */
         foreach ($this->getContainers() as $container) {
             if (true === $container->has($id)) {
                 return $this->inflects($container->get($id));
@@ -133,6 +134,7 @@ class Container implements ContainerInterface
      */
     public function has($id): bool
     {
+        /** @var ContainerInterface $container */
         foreach ($this->getContainers() as $container) {
             if (true === $container->has($id)) {
                 return true;

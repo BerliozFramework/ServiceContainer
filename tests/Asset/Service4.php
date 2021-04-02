@@ -24,4 +24,9 @@ class Service4
     {
         return sprintf('It\'s a test "%s"', static::class);
     }
+
+    public static function testStatic()
+    {
+        return sprintf('It\'s a test "%s"', static::class);
+    }
 }
