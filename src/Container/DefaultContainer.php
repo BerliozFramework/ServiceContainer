@@ -26,7 +26,7 @@ class DefaultContainer implements ContainerInterface
 {
     protected Instantiator $instantiator;
     /** @var Service[] */
-    private array $services = [];
+    protected array $services = [];
 
     public function __construct(?Instantiator $instantiator = null)
     {
@@ -68,12 +68,18 @@ class DefaultContainer implements ContainerInterface
      */
     protected function getService(string $id): ?Service
     {
+        $isClass = class_exists($id);
+
         foreach ($this->services as $service) {
             if ($id === $service->getAlias()) {
                 return $service;
             }
 
-            if ($id === $service->getClass()) {
+            if (false === $isClass) {
+                continue;
+            }
+
+            if (is_a($id, $service->getClass(), true)) {
                 return $service;
             }
         }

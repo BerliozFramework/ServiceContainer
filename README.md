@@ -187,3 +187,47 @@ $inflector = new Inflector(
 $container = new Container();
 $container->addInflector($inflector);
 ```
+
+### Service provider
+
+In some case, like performances constraints, you need to add a service provider.
+
+A service provider need to implement `\Berlioz\ServiceContainer\Provider\ServiceProviderInterface` interface. An
+abstract class `\Berlioz\ServiceContainer\Provider\AbstractServiceProvider` can help you.
+
+Example of a service provider:
+
+```php
+use Berlioz\ServiceContainer\Container;
+use Berlioz\ServiceContainer\Provider\AbstractServiceProvider;
+
+class MyServiceProvider extends AbstractServiceProvider
+{
+    // Declare services class and alias
+    protected array $provides = [stdClass::class, 'service'];
+    
+    public function boot(Container $container) : void
+    {
+        // This method is called when provider is added to container.
+        // Add inflectors here.
+    }
+    
+    public function register(Container $container) : void
+    {
+         // Add services here
+         $container->add(stdClass::class, 'service');
+    }
+}
+```
+
+Add your service provider:
+
+```php
+use Berlioz\ServiceContainer\Container;
+
+$container = new Container();
+$container->addProvider(new MyServiceProvider());
+
+$container->has('service'); // Returns TRUE
+$container->get('service'); // Returns an `stdClass` instance
+```

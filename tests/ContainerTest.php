@@ -21,6 +21,7 @@ use Berlioz\ServiceContainer\Service\Service;
 use Berlioz\ServiceContainer\Tests\Asset\Service4;
 use Berlioz\ServiceContainer\Tests\Asset\WithDependency;
 use Berlioz\ServiceContainer\Tests\Asset\WithoutConstructor;
+use Berlioz\ServiceContainer\Tests\Container\FakeServiceProvider;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 
@@ -33,7 +34,7 @@ class ContainerTest extends TestCase
             [new Inflector(InstantiatorAwareInterface::class, 'setInstantiator')]
         );
 
-        $this->assertCount(2, iterator_to_array($container->getContainers(), false));
+        $this->assertCount(3, iterator_to_array($container->getContainers(), false));
         $this->assertCount(3, $container->getInflectors());
     }
 
@@ -66,13 +67,13 @@ class ContainerTest extends TestCase
     {
         $container = new FakeContainer();
 
-        $this->assertCount(1, iterator_to_array($container->getContainers(), false));
-
-        $container->autoWiring(true);
         $this->assertCount(2, iterator_to_array($container->getContainers(), false));
 
+        $container->autoWiring(true);
+        $this->assertCount(3, iterator_to_array($container->getContainers(), false));
+
         $container->autoWiring(false);
-        $this->assertCount(1, iterator_to_array($container->getContainers(), false));
+        $this->assertCount(2, iterator_to_array($container->getContainers(), false));
     }
 
     public function testAdd()
@@ -147,7 +148,7 @@ class ContainerTest extends TestCase
         $container->addContainer(new Container\DefaultContainer(), new Container\DefaultContainer());
 
         $containers = iterator_to_array($container->getContainers(), false);
-        $this->assertCount(3, $containers);
+        $this->assertCount(4, $containers);
     }
 
     public function testAddInflector()
@@ -156,5 +157,15 @@ class ContainerTest extends TestCase
         $container->addInflector(new Inflector(stdClass::class, 'myMethod'));
 
         $this->assertCount(3, $container->getInflectors());
+    }
+
+    public function testAddProvider()
+    {
+        $container = new FakeContainer();
+        $container->addProvider(new FakeServiceProvider());
+
+        $this->assertTrue($container->has('foo'));
+        $this->assertTrue($container->has('bar'));
+        $this->assertFalse($container->has('baz'));
     }
 }

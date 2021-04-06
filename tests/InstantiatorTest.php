@@ -123,6 +123,24 @@ class InstantiatorTest extends TestCase
         $this->assertSame(2, $result->param2);
     }
 
+    public function testNewInstanceOf_withAlias()
+    {
+        $container = new Container();
+        $container->addService(
+            new Service($service1 = new Service1('param1', 'param2', 1), 'mySuperAlias'),
+        );
+        $instantiator = new Instantiator($container);
+
+        $result = $instantiator->newInstanceOf(
+            Service2::class,
+            [
+                'param1' => 'param1Value',
+                'param2' => '@mySuperAlias'
+            ]
+        );
+        $this->assertSame($service1, $result->getParam2());
+    }
+
     public function testInvokeMethod()
     {
         $container = new Container();

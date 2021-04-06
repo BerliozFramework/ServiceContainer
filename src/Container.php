@@ -16,8 +16,10 @@ namespace Berlioz\ServiceContainer;
 
 use Berlioz\ServiceContainer\Container\AutoWiringContainer;
 use Berlioz\ServiceContainer\Container\DefaultContainer;
+use Berlioz\ServiceContainer\Container\ProviderContainer;
 use Berlioz\ServiceContainer\Exception\NotFoundException;
 use Berlioz\ServiceContainer\Inflector\Inflector;
+use Berlioz\ServiceContainer\Provider\ServiceProviderInterface;
 use Berlioz\ServiceContainer\Service\Service;
 use Closure;
 use Generator;
@@ -30,6 +32,7 @@ class Container implements ContainerInterface
 {
     protected Instantiator $instantiator;
     protected ContainerInterface $container;
+    protected ProviderContainer $providers;
     /** @var ContainerInterface[] */
     protected array $containers = [];
     /** @var Inflector[] */
@@ -45,6 +48,7 @@ class Container implements ContainerInterface
     {
         $this->instantiator = new Instantiator($this);
         $this->container = new DefaultContainer($this->instantiator);
+        $this->providers = new ProviderContainer($this);
 
         $this->addContainer(...$containers);
         $this->addInflector(
@@ -173,6 +177,7 @@ class Container implements ContainerInterface
     protected function getContainers(): Generator
     {
         yield $this->container;
+        yield $this->providers;
         yield from $this->containers;
     }
 
@@ -215,5 +220,15 @@ class Container implements ContainerInterface
         }
 
         return $obj;
+    }
+
+    /**
+     * Add provider.
+     *
+     * @param ServiceProviderInterface ...$provider
+     */
+    public function addProvider(ServiceProviderInterface ...$provider): void
+    {
+        $this->providers->addProvider(...$provider);
     }
 }
