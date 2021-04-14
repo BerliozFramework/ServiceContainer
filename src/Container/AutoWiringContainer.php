@@ -18,6 +18,7 @@ use Berlioz\ServiceContainer\Exception\ContainerException;
 use Berlioz\ServiceContainer\Exception\NotFoundException;
 use Berlioz\ServiceContainer\Instantiator;
 use Psr\Container\ContainerInterface;
+use Throwable;
 
 /**
  * Class AutoWiringContainer.
@@ -58,6 +59,8 @@ class AutoWiringContainer implements ContainerInterface
 
             return $object;
         } catch (ContainerException $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
             throw ContainerException::instantiation($id, $exception);
         }
     }

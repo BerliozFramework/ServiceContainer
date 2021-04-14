@@ -12,6 +12,7 @@
 
 namespace Berlioz\ServiceContainer\Tests\Container;
 
+use ArrayAccess;
 use Berlioz\ServiceContainer\Container\AutoWiringContainer;
 use Berlioz\ServiceContainer\Exception\NotFoundException;
 use Berlioz\ServiceContainer\Tests\Asset\WithDependency;
@@ -48,5 +49,6 @@ class AutoWiringContainerTest extends TestCase
         $this->assertTrue($container->has(WithoutConstructor::class));
         $this->assertTrue($container->has(WithDependency::class));
         $this->assertFalse($container->has('UnknownClass'));
+        $this->assertFalse($container->has(ArrayAccess::class)); // An interface
     }
 }

@@ -20,6 +20,7 @@ use Berlioz\ServiceContainer\Exception\InstantiatorException;
 use Closure;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
@@ -27,7 +28,6 @@ use ReflectionNamedType;
 use ReflectionParameter;
 use ReflectionType;
 use ReflectionUnionType;
-use Throwable;
 
 /**
  * Class Instantiator.
@@ -46,23 +46,25 @@ class Instantiator
     /**
      * Call.
      *
-     * @param string|Closure $subject
+     * @param string|array|Closure $subject
      * @param array $arguments
      * @param bool $autoWiring
      *
      * @return mixed
      * @throws ContainerException
      */
-    public function call(string|Closure $subject, array $arguments = [], bool $autoWiring = true): mixed
+    public function call(string|array|Closure $subject, array $arguments = [], bool $autoWiring = true): mixed
     {
         // Function?
-        if ($subject instanceof Closure || function_exists($subject)) {
+        if ($subject instanceof Closure || (is_string($subject) && function_exists($subject))) {
             return $this->invokeFunction($subject, $arguments, $autoWiring);
         }
 
         // Method
-        if (true === str_contains($subject, '::')) {
-            $subject = explode('::', $subject, 2);
+        if (true === is_array($subject) || true === str_contains($subject, '::')) {
+            if (false === is_array($subject)) {
+                $subject = explode('::', $subject, 2);
+            }
 
             return $this->invokeMethod($subject[0], $subject[1], $arguments, $autoWiring);
         }
@@ -100,8 +102,10 @@ class Instantiator
             }
 
             return $reflectionClass->newInstanceWithoutConstructor();
-        } catch (Throwable $exception) {
+        } catch (ReflectionException $exception) {
             throw InstantiatorException::classError($class, $exception);
+        } catch (ContainerException $exception) {
+            throw $exception;
         }
     }
 
@@ -149,8 +153,10 @@ class Instantiator
             }
 
             return $reflectionMethod->invokeArgs($class, $arguments);
-        } catch (Throwable $exception) {
+        } catch (ReflectionException $exception) {
             throw InstantiatorException::methodError($class, $method, $exception);
+        } catch (ContainerException $exception) {
+            throw $exception;
         }
     }
 
@@ -176,8 +182,10 @@ class Instantiator
             }
 
             return $reflectionFunction->invokeArgs($arguments);
-        } catch (Throwable $exception) {
+        } catch (ReflectionException $exception) {
             throw InstantiatorException::functionError($function, $exception);
+        } catch (ContainerException $exception) {
+            throw $exception;
         }
     }
 
@@ -188,14 +196,17 @@ class Instantiator
      * @param array $arguments
      *
      * @return array
-     * @throws ArgumentException
      * @throws ContainerException
      */
     protected function getArguments(
         ReflectionFunctionAbstract $reflectionFunction,
         array $arguments = []
     ): array {
+        $parameters = [];
+
         foreach ($reflectionFunction->getParameters() as $reflectionParameter) {
+            $parameters[] = $reflectionParameter->getName();
+
             // Argument already given
             if (array_key_exists($reflectionParameter->getName(), $arguments)) {
                 $argument = &$arguments[$reflectionParameter->getName()];
@@ -203,9 +214,13 @@ class Instantiator
                 if (is_string($argument)) {
                     // It's an alias?
                     if (str_starts_with($argument, '@')) {
-                        if (true === $this->container?->has(substr($argument, 1))) {
-                            $argument = $this->container->get(substr($argument, 1));
+                        $serviceName = substr($argument, 1);
+
+                        if (false === $this->container?->has($serviceName)) {
+                            throw ArgumentException::missingService($serviceName);
                         }
+
+                        $argument = $this->container->get($serviceName);
                     }
                 }
                 continue;
@@ -223,7 +238,10 @@ class Instantiator
                         continue 2;
                     }
 
-                    $arguments[$reflectionParameter->getName()] = $this->newInstanceOf($reflectionType->getName());
+                    if (class_exists($reflectionType->getName())) {
+                        $arguments[$reflectionParameter->getName()] = $this->newInstanceOf($reflectionType->getName());
+                        continue 2;
+                    }
                 }
             }
 
@@ -241,7 +259,7 @@ class Instantiator
             throw ArgumentException::missingArgument($reflectionParameter->getName());
         }
 
-        return $arguments;
+        return array_intersect_key($arguments, array_fill_keys($parameters, null));
     }
 
     /**
@@ -255,12 +273,12 @@ class Instantiator
     {
         $type = $parameter->getType();
 
-        if ($type instanceof ReflectionType) {
-            return [$type];
-        }
-
         if ($type instanceof ReflectionUnionType) {
             return $type->getTypes();
+        }
+
+        if ($type instanceof ReflectionType) {
+            return [$type];
         }
 
         return [];

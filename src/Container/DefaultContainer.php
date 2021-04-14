@@ -17,6 +17,7 @@ namespace Berlioz\ServiceContainer\Container;
 use Berlioz\ServiceContainer\Exception\NotFoundException;
 use Berlioz\ServiceContainer\Instantiator;
 use Berlioz\ServiceContainer\Service\Service;
+use Generator;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -44,6 +45,46 @@ class DefaultContainer implements ContainerInterface
     }
 
     /**
+     * Get services.
+     *
+     * @return Generator
+     */
+    public function getServices(): Generator
+    {
+        yield from $this->services;
+    }
+
+    /**
+     * Get service by id.
+     *
+     * @param string $id
+     *
+     * @return Service|null
+     */
+    protected function getService(string $id): ?Service
+    {
+        // Search alias and class
+        foreach ($this->services as $service) {
+            if ($id === $service->getAlias()) {
+                return $service;
+            }
+
+            if ($id === $service->getClass()) {
+                return $service;
+            }
+        }
+
+        // Search provides
+        foreach ($this->services as $service) {
+            if (in_array($id, $service->getProvides())) {
+                return $service;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * @inheritDoc
      */
     public function get($id): object
@@ -57,27 +98,5 @@ class DefaultContainer implements ContainerInterface
     public function has($id): bool
     {
         return null !== $this->getService($id);
-    }
-
-    /**
-     * Get service by id.
-     *
-     * @param string $id
-     *
-     * @return Service|null
-     */
-    protected function getService(string $id): ?Service
-    {
-        foreach ($this->services as $service) {
-            if ($id === $service->getAlias()) {
-                return $service;
-            }
-
-            if ($id === $service->getClass()) {
-                return $service;
-            }
-        }
-
-        return null;
     }
 }

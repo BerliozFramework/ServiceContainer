@@ -21,7 +21,6 @@ use Berlioz\ServiceContainer\Tests\Asset\RecursiveService;
 use Berlioz\ServiceContainer\Tests\Asset\Service1;
 use Berlioz\ServiceContainer\Tests\Asset\Service2;
 use PHPUnit\Framework\TestCase;
-use PHPUnit\Runner\NullTestResultCache;
 
 class ServiceTest extends TestCase
 {
@@ -138,7 +137,10 @@ class ServiceTest extends TestCase
 
     public function testGet_withFactory()
     {
-        $service = new Service(Service1::class, factory: fn(...$args) => new Service1(...$args));
+        $service = new Service(
+            Service1::class,
+            factory: fn($param1, $param2, $param3) => new Service1($param1, $param2, $param3)
+        );
         $service->addArguments(['param1' => 'foo', 'param2' => 'bar', 'param3' => 1]);
 
         $this->assertInstanceOf(

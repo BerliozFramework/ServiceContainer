@@ -62,7 +62,7 @@ class CacheStrategy
         } catch (InvalidArgumentException $exception) {
             throw new ContainerException(
                 sprintf('Error during cache read of service "%s"', $service->getAlias()),
-                exception: $exception
+                previous: $exception
             );
         }
     }

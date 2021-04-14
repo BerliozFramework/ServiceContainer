@@ -13,6 +13,7 @@
 namespace Berlioz\ServiceContainer\Tests;
 
 use Berlioz\ServiceContainer\Container;
+use Berlioz\ServiceContainer\Exception\ArgumentException;
 use Berlioz\ServiceContainer\Exception\ContainerException;
 use Berlioz\ServiceContainer\Instantiator;
 use Berlioz\ServiceContainer\Service\Service;
@@ -50,7 +51,23 @@ class InstantiatorTest extends TestCase
         $this->assertInstanceOf(Service3::class, $service);
     }
 
-    public function testNewInstanceOfWithNotNamedParameters()
+    public function testNewInstanceOf_withTooMuchParams()
+    {
+        $instantiator = new Instantiator();
+        $service = $instantiator->newInstanceOf(
+            Service1::class,
+            [
+                'param1' => 'test',
+                'param2' => 'test',
+                'param3' => 3,
+                'param4' => 'test',
+                'param5' => 'test',
+            ]
+        );
+        $this->assertInstanceOf(Service1::class, $service);
+    }
+
+    public function testNewInstanceOf_withNotNamedParameters()
     {
         $service1 = new Service1('param1', 'param2', 1);
         $instantiator = new Instantiator();
@@ -123,6 +140,20 @@ class InstantiatorTest extends TestCase
         $this->assertSame(2, $result->param2);
     }
 
+
+    public function testNewInstanceOf_withUnionTypesAutoWiring()
+    {
+        $instantiator = new Instantiator();
+        $result = $instantiator->newInstanceOf(
+            Service9::class,
+            [
+                'param2' => 2,
+            ]
+        );
+        $this->assertInstanceOf(Service4::class, $result->param1);
+        $this->assertSame(2, $result->param2);
+    }
+
     public function testNewInstanceOf_withAlias()
     {
         $container = new Container();
@@ -139,6 +170,26 @@ class InstantiatorTest extends TestCase
             ]
         );
         $this->assertSame($service1, $result->getParam2());
+    }
+
+    public function testNewInstanceOf_withUnknownAlias()
+    {
+        $this->expectException(ArgumentException::class);
+        $this->expectExceptionMessage(ArgumentException::missingService('mySuperUnknownAlias')->getMessage());
+
+        $container = new Container();
+        $container->addService(
+            new Service($service1 = new Service1('param1', 'param2', 1), 'mySuperAlias'),
+        );
+        $instantiator = new Instantiator($container);
+
+        $instantiator->newInstanceOf(
+            Service2::class,
+            [
+                'param1' => 'param1Value',
+                'param2' => '@mySuperUnknownAlias'
+            ]
+        );
     }
 
     public function testInvokeMethod()

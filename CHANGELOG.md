@@ -7,9 +7,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [2.0.0-beta3] - In progress
 
+### Added
+
+- Can declare some provided classes by the service with method `Service::addProvide()`
+
+### Changed
+
+- Accept an array in first argument of `Container::call()`
+- Exception message for missing service in arguments
+
 ### Removed
 
 - Magic match of class in default container
+
+### Fixed
+
+- Union types not prioritized
+
 
 ## [2.0.0-beta2] - 2021-04-06
 

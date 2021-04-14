@@ -151,14 +151,14 @@ class Container implements ContainerInterface
     /**
      * Call.
      *
-     * @param string|Closure $subject
+     * @param string|array|Closure $subject
      * @param array $arguments
      * @param bool $autoWiring
      *
      * @return mixed
      * @throws Exception\ContainerException
      */
-    public function call(string|Closure $subject, array $arguments = [], bool $autoWiring = true): mixed
+    public function call(string|array|Closure $subject, array $arguments = [], bool $autoWiring = true): mixed
     {
         $result = $this->instantiator->call($subject, $arguments, $autoWiring);
 

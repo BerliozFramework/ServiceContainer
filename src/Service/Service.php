@@ -23,6 +23,7 @@ use Berlioz\ServiceContainer\Instantiator;
 class Service
 {
     protected string $class;
+    protected array $provides = [];
     protected mixed $factory = null;
     protected array $arguments = [];
     protected array $calls = [];
@@ -104,6 +105,30 @@ class Service
     public function getAlias(): string
     {
         return $this->alias ?? $this->class;
+    }
+
+    /**
+     * Get provides.
+     *
+     * @return array
+     */
+    public function getProvides(): array
+    {
+        return $this->provides;
+    }
+
+    /**
+     * Add provide.
+     *
+     * @param string ...$provide
+     *
+     * @return $this
+     */
+    public function addProvide(string ...$provide): static
+    {
+        array_push($this->provides, ...$provide);
+
+        return $this;
     }
 
     /**
@@ -264,10 +289,6 @@ class Service
      */
     protected function factory(Instantiator $instantiator): mixed
     {
-        if (is_callable($this->factory)) {
-            return ($this->factory)(...$this->getArguments());
-        }
-
         return $instantiator->call($this->factory, $this->getArguments());
     }
 

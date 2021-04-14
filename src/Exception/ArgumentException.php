@@ -30,4 +30,16 @@ class ArgumentException extends InstantiatorException
     {
         return new static(sprintf('Missing argument "%s"', $name));
     }
+
+    /**
+     * Missing service.
+     *
+     * @param string $name
+     *
+     * @return static
+     */
+    public static function missingService(string $name): static
+    {
+        return new static(sprintf('Service "%s" does not found in container ', $name));
+    }
 }
