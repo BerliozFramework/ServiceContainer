@@ -65,7 +65,9 @@ class Container implements ContainerInterface
             ...$inflectors
         );
 
-        $this->add($this);
+        // Add me has container service
+        $service = $this->add($this);
+        $service->addProvide(ContainerInterface::class);
     }
 
     /**
@@ -121,7 +123,7 @@ class Container implements ContainerInterface
     /**
      * @inheritDoc
      */
-    public function get($id): object
+    public function get(string $id): object
     {
         /** @var ContainerInterface $container */
         foreach ($this->getContainers() as $container) {

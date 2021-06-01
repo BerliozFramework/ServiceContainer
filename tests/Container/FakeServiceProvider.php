@@ -26,7 +26,7 @@ class FakeServiceProvider extends AbstractServiceProvider
     public function register(Container $container): void
     {
         $container->addService(
-            new Service($service = new WithoutConstructor(), 'foo'),
+            new Service(new WithoutConstructor(), 'foo'),
             new Service(WithDependency::class, 'bar')
         );
     }

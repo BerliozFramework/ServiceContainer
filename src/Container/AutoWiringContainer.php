@@ -36,7 +36,7 @@ class AutoWiringContainer implements ContainerInterface
     /**
      * @inheritDoc
      */
-    public function get($id): object
+    public function get(string $id): object
     {
         if (!class_exists($id)) {
             throw NotFoundException::classDoesNotExists($id);
@@ -68,7 +68,7 @@ class AutoWiringContainer implements ContainerInterface
     /**
      * @inheritDoc
      */
-    public function has($id): bool
+    public function has(string $id): bool
     {
         if (array_key_exists($id, $this->cache)) {
             return true;

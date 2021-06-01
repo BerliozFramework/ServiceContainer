@@ -22,7 +22,7 @@ use Berlioz\ServiceContainer\Container;
 interface ServiceProviderInterface
 {
     /**
-     * Get provides.
+     * Is provides?
      *
      * @param string $id
      *

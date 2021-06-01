@@ -87,7 +87,7 @@ class DefaultContainer implements ContainerInterface
     /**
      * @inheritDoc
      */
-    public function get($id): object
+    public function get(string $id): object
     {
         return $this->getService($id)?->get($this->instantiator) ?? throw NotFoundException::notFound($id);
     }
@@ -95,7 +95,7 @@ class DefaultContainer implements ContainerInterface
     /**
      * @inheritDoc
      */
-    public function has($id): bool
+    public function has(string $id): bool
     {
         return null !== $this->getService($id);
     }

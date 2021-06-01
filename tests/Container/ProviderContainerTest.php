@@ -67,7 +67,7 @@ class ProviderContainerTest extends TestCase
 
     public function testGet()
     {
-        $container = (new FakeContainer())->getProviderContainer();
+        $container = new FakeContainer();
         $container->addProvider(new FakeServiceProvider());
 
         $this->assertInstanceOf(WithoutConstructor::class, $service = $container->get('foo'));

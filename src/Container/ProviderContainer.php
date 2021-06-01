@@ -46,6 +46,25 @@ class ProviderContainer implements ContainerInterface
     /**
      * @inheritDoc
      */
+    public function get(string $id): object
+    {
+        foreach ($this->providers as $iProvider => $provider) {
+            if (false === $provider->provides($id)) {
+                continue;
+            }
+
+            array_push($this->registered, ...array_splice($this->providers, $iProvider, 1));
+            $provider->register($this->container);
+
+            return $this->container->get($id);
+        }
+
+        throw NotFoundException::notFound($id);
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function has(string $id): bool
     {
         foreach ($this->providers as $provider) {
@@ -55,24 +74,5 @@ class ProviderContainer implements ContainerInterface
         }
 
         return false;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function get(string $id): object
-    {
-        foreach ($this->providers as $iProvider => $provider) {
-            if (false === $provider->provides($id)) {
-                continue;
-            }
-
-            array_push($this->registered, ...array_slice($this->providers, $iProvider, 1));
-            $provider->register($this->container);
-
-            return $this->container->get($id);
-        }
-
-        throw NotFoundException::notFound($id);
     }
 }
