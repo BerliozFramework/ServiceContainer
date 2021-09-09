@@ -104,8 +104,6 @@ class Instantiator
             return $reflectionClass->newInstanceWithoutConstructor();
         } catch (ReflectionException $exception) {
             throw InstantiatorException::classError($class, $exception);
-        } catch (ContainerException $exception) {
-            throw $exception;
         }
     }
 
@@ -155,8 +153,6 @@ class Instantiator
             return $reflectionMethod->invokeArgs($class, $arguments);
         } catch (ReflectionException $exception) {
             throw InstantiatorException::methodError($class, $method, $exception);
-        } catch (ContainerException $exception) {
-            throw $exception;
         }
     }
 
@@ -184,8 +180,6 @@ class Instantiator
             return $reflectionFunction->invokeArgs($arguments);
         } catch (ReflectionException $exception) {
             throw InstantiatorException::functionError($function, $exception);
-        } catch (ContainerException $exception) {
-            throw $exception;
         }
     }
 
@@ -205,11 +199,11 @@ class Instantiator
         $parameters = [];
 
         foreach ($reflectionFunction->getParameters() as $reflectionParameter) {
-            $parameters[] = $reflectionParameter->getName();
+            $parameters[] = $parameterName = $reflectionParameter->getName();
 
             // Argument already given
-            if (array_key_exists($reflectionParameter->getName(), $arguments)) {
-                $argument = &$arguments[$reflectionParameter->getName()];
+            if (array_key_exists($parameterName, $arguments)) {
+                $argument = &$arguments[$parameterName];
 
                 if (is_string($argument)) {
                     // It's an alias?
@@ -228,20 +222,23 @@ class Instantiator
 
             // Search with types
             if (true === $reflectionParameter->hasType()) {
-                foreach ($this->getParameterTypes($reflectionParameter) as $reflectionType) {
-                    if (true === $reflectionType->isBuiltin()) {
-                        continue;
-                    }
+                try {
+                    foreach ($this->getParameterTypes($reflectionParameter) as $reflectionType) {
+                        if (true === $reflectionType->isBuiltin()) {
+                            continue;
+                        }
 
-                    if (true === $this->container?->has($reflectionType->getName())) {
-                        $arguments[$reflectionParameter->getName()] = $this->container->get($reflectionType->getName());
-                        continue 2;
-                    }
+                        if (true === $this->container?->has($reflectionType->getName())) {
+                            $arguments[$parameterName] = $this->container->get($reflectionType->getName());
+                            continue 2;
+                        }
 
-                    if (class_exists($reflectionType->getName())) {
-                        $arguments[$reflectionParameter->getName()] = $this->newInstanceOf($reflectionType->getName());
-                        continue 2;
+                        if (class_exists($reflectionType->getName())) {
+                            $arguments[$parameterName] = $this->newInstanceOf($reflectionType->getName());
+                            continue 2;
+                        }
                     }
+                } catch (ArgumentException) {
                 }
             }
 
@@ -252,11 +249,11 @@ class Instantiator
 
             // Allows null value?
             if (true === $reflectionParameter->allowsNull()) {
-                $arguments[$reflectionParameter->getName()] = null;
+                $arguments[$parameterName] = null;
                 continue;
             }
 
-            throw ArgumentException::missingArgument($reflectionParameter->getName());
+            throw ArgumentException::missingArgument($parameterName);
         }
 
         return array_intersect_key($arguments, array_fill_keys($parameters, null));

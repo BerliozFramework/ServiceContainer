@@ -21,7 +21,9 @@ use Berlioz\ServiceContainer\Tests\Asset\Service1;
 use Berlioz\ServiceContainer\Tests\Asset\Service2;
 use Berlioz\ServiceContainer\Tests\Asset\Service3;
 use Berlioz\ServiceContainer\Tests\Asset\Service4;
+use Berlioz\ServiceContainer\Tests\Asset\Service7;
 use Berlioz\ServiceContainer\Tests\Asset\Service9;
+use Berlioz\ServiceContainer\Tests\Asset\WithParameter;
 use PHPUnit\Framework\TestCase;
 
 class InstantiatorTest extends TestCase
@@ -95,6 +97,19 @@ class InstantiatorTest extends TestCase
         $this->assertInstanceOf(Service3::class, $service);
         $this->assertNull($service->param3);
         $this->assertEquals('test', $service->param4);
+    }
+
+    public function testNewInstanceOf_optionalClassParameters()
+    {
+        $instantiator = new Instantiator();
+
+        $service = $instantiator->newInstanceOf(Service7::class);
+        $this->assertInstanceOf(Service7::class, $service);
+        $this->assertNull($service->obj);
+
+        $service = $instantiator->newInstanceOf(Service7::class, ['obj' => new WithParameter('bar')]);
+        $this->assertInstanceOf(Service7::class, $service);
+        $this->assertNotNull($service->obj);
     }
 
     public function testNewInstanceOf_missingParameter()

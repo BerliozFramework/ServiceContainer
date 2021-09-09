@@ -10,11 +10,13 @@
  * file that was distributed with this source code, to the root.
  */
 
+declare(strict_types=1);
+
 namespace Berlioz\ServiceContainer\Tests\Asset;
 
-class Service7
+class WithParameter
 {
-    public function __construct(WithDependency $service6, public ?WithParameter $obj)
+    public function __construct(string $foo)
     {
     }
 }
