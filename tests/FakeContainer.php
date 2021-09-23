@@ -19,6 +19,11 @@ use Generator;
 
 class FakeContainer extends Container
 {
+    public function getDefaultContainer(): Container\DefaultContainer
+    {
+        return $this->container;
+    }
+
     public function getProviderContainer(): Container\ProviderContainer
     {
         return $this->providers;

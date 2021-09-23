@@ -27,7 +27,6 @@ class ProviderContainerTest extends TestCase
     public function testAddProvider()
     {
         $container = (new FakeContainer())->getProviderContainer();
-        $booted = false;
 
         $this->assertFalse($container->has('foo'));
         $this->assertFalse($container->has('bar'));
