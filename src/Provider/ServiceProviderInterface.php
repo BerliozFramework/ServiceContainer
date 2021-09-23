@@ -31,16 +31,16 @@ interface ServiceProviderInterface
     public function provides(string $id): bool;
 
     /**
-     * Boot.
-     *
-     * @param Container $container
-     */
-    public function boot(Container $container): void;
-
-    /**
      * Register.
      *
      * @param Container $container
      */
     public function register(Container $container): void;
+
+    /**
+     * Boot.
+     *
+     * @param Container $container
+     */
+    public function boot(Container $container): void;
 }

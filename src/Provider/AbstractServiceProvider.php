@@ -34,14 +34,14 @@ abstract class AbstractServiceProvider implements ServiceProviderInterface
     /**
      * @inheritDoc
      */
-    public function boot(Container $container): void
+    public function register(Container $container): void
     {
     }
 
     /**
      * @inheritDoc
      */
-    public function register(Container $container): void
+    public function boot(Container $container): void
     {
     }
 }
