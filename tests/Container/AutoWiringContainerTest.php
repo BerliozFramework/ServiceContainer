@@ -14,7 +14,9 @@ namespace Berlioz\ServiceContainer\Tests\Container;
 
 use ArrayAccess;
 use Berlioz\ServiceContainer\Container\AutoWiringContainer;
+use Berlioz\ServiceContainer\Exception\ContainerException;
 use Berlioz\ServiceContainer\Exception\NotFoundException;
+use Berlioz\ServiceContainer\Tests\Asset\RecursiveService;
 use Berlioz\ServiceContainer\Tests\Asset\WithDependency;
 use Berlioz\ServiceContainer\Tests\Asset\WithoutConstructor;
 use PHPUnit\Framework\TestCase;
@@ -31,6 +33,14 @@ class AutoWiringContainerTest extends TestCase
         $this->assertInstanceOf(WithoutConstructor::class, $service2 = $container->get(WithoutConstructor::class));
         $this->assertSame($service2, $container->get(WithoutConstructor::class));
         $this->assertSame($service2, $service->param);
+    }
+
+    public function testGet_recursive()
+    {
+        $this->expectException(ContainerException::class);
+
+        $container = new AutoWiringContainer();
+        $container->get(RecursiveService::class);
     }
 
     public function testGetUnknown()

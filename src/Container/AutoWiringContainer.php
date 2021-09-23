@@ -27,6 +27,7 @@ class AutoWiringContainer implements ContainerInterface
 {
     protected Instantiator $instantiator;
     protected array $cache = [];
+    protected array $instantiation = [];
 
     public function __construct(?Instantiator $instantiator = null)
     {
@@ -50,12 +51,19 @@ class AutoWiringContainer implements ContainerInterface
         }
 
         try {
+            if (in_array($id, $this->instantiation)) {
+                throw new ContainerException(sprintf('Recursive initialization of service "%s"', $id));
+            }
+
+            $this->instantiation[] = $id;
             $object = $this->instantiator->newInstanceOf($id);
 
             if (false !== ($implements = class_implements($object))) {
                 array_unshift($implements, get_class($object));
                 array_walk($implements, fn(string $implement) => $this->cache[$implement][] = $object);
             }
+
+            unset($this->instantiation[array_search($id, $this->instantiation)]);
 
             return $object;
         } catch (ContainerException $exception) {
