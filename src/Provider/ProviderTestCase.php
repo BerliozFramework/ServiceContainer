@@ -10,12 +10,12 @@
  * file that was distributed with this source code, to the root.
  */
 
-namespace Berlioz\ServiceContainer\Tests\Provider;
+declare(strict_types=1);
+
+namespace Berlioz\ServiceContainer\Provider;
 
 use Berlioz\ServiceContainer\Container;
-use Berlioz\ServiceContainer\Provider\ServiceProviderInterface;
 use Berlioz\ServiceContainer\Service\Service;
-use Berlioz\ServiceContainer\Tests\FakeContainer;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 
@@ -28,7 +28,7 @@ abstract class ProviderTestCase extends TestCase
      */
     public function getContainer(): Container
     {
-        return new FakeContainer();
+        return new Container();
     }
 
     /**

@@ -12,6 +12,7 @@
 
 namespace Berlioz\ServiceContainer\Tests\Provider;
 
+use Berlioz\ServiceContainer\Provider\ProviderTestCase;
 use Berlioz\ServiceContainer\Tests\Container\FakeServiceProvider;
 
 class FakeServiceProviderTest extends ProviderTestCase
