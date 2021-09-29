@@ -16,9 +16,6 @@ namespace Berlioz\ServiceContainer\Exception;
 
 use Psr\Container\NotFoundExceptionInterface;
 
-/**
- * Class NotFoundException.
- */
 class NotFoundException extends ContainerException implements NotFoundExceptionInterface
 {
     /**

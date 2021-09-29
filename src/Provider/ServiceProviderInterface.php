@@ -16,9 +16,6 @@ namespace Berlioz\ServiceContainer\Provider;
 
 use Berlioz\ServiceContainer\Container;
 
-/**
- * Interface ServiceProviderInterface.
- */
 interface ServiceProviderInterface
 {
     /**

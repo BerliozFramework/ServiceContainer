@@ -25,9 +25,6 @@ use Closure;
 use Generator;
 use Psr\Container\ContainerInterface;
 
-/**
- * Class Container.
- */
 class Container implements ContainerInterface
 {
     protected Instantiator $instantiator;

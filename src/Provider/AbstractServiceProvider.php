@@ -16,9 +16,6 @@ namespace Berlioz\ServiceContainer\Provider;
 
 use Berlioz\ServiceContainer\Container;
 
-/**
- * Class AbstractServiceProvider.
- */
 abstract class AbstractServiceProvider implements ServiceProviderInterface
 {
     protected array $provides = [];

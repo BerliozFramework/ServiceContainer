@@ -14,9 +14,6 @@ declare(strict_types=1);
 
 namespace Berlioz\ServiceContainer\Exception;
 
-/**
- * Class ArgumentException.
- */
 class ArgumentException extends InstantiatorException
 {
     /**

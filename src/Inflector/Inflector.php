@@ -14,9 +14,6 @@ declare(strict_types=1);
 
 namespace Berlioz\ServiceContainer\Inflector;
 
-/**
- * Class Inflector.
- */
 class Inflector
 {
     public function __construct(

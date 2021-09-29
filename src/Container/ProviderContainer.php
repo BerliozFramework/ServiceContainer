@@ -19,9 +19,6 @@ use Berlioz\ServiceContainer\Exception\NotFoundException;
 use Berlioz\ServiceContainer\Provider\ServiceProviderInterface;
 use Psr\Container\ContainerInterface;
 
-/**
- * Class ProviderContainer.
- */
 class ProviderContainer implements ContainerInterface
 {
     /** @var ServiceProviderInterface[] */

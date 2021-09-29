@@ -17,9 +17,6 @@ namespace Berlioz\ServiceContainer\Exception;
 use Closure;
 use Throwable;
 
-/**
- * Class InstantiatorException.
- */
 class InstantiatorException extends ContainerException
 {
     /**

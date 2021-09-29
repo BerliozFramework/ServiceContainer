@@ -19,9 +19,6 @@ use Exception;
 use Psr\Container\ContainerExceptionInterface;
 use Throwable;
 
-/**
- * Class ContainerException.
- */
 class ContainerException extends Exception implements ContainerExceptionInterface
 {
     /**

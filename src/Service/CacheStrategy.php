@@ -19,9 +19,6 @@ use DateInterval;
 use Psr\SimpleCache\CacheInterface;
 use Psr\SimpleCache\InvalidArgumentException;
 
-/**
- * Class CacheStrategy.
- */
 class CacheStrategy
 {
     const CACHE_PATTERN = 'CONTAINER_%s';

@@ -20,9 +20,6 @@ use Berlioz\ServiceContainer\Service\Service;
 use Generator;
 use Psr\Container\ContainerInterface;
 
-/**
- * Class DefaultContainer.
- */
 class DefaultContainer implements ContainerInterface
 {
     protected Instantiator $instantiator;

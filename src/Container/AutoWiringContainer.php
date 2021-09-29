@@ -20,9 +20,6 @@ use Berlioz\ServiceContainer\Instantiator;
 use Psr\Container\ContainerInterface;
 use Throwable;
 
-/**
- * Class AutoWiringContainer.
- */
 class AutoWiringContainer implements ContainerInterface
 {
     protected Instantiator $instantiator;

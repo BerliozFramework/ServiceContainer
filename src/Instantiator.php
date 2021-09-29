@@ -29,9 +29,6 @@ use ReflectionParameter;
 use ReflectionType;
 use ReflectionUnionType;
 
-/**
- * Class Instantiator.
- */
 class Instantiator
 {
     /**

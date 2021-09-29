@@ -17,9 +17,6 @@ namespace Berlioz\ServiceContainer\Service;
 use Berlioz\ServiceContainer\Exception\ContainerException;
 use Berlioz\ServiceContainer\Instantiator;
 
-/**
- * Class Service.
- */
 class Service
 {
     protected string $class;
