@@ -37,7 +37,7 @@ class AutoWiringContainer implements ContainerInterface
     /**
      * @inheritDoc
      */
-    public function get(string $id): object
+    public function get(string $id): mixed
     {
         if (!class_exists($id)) {
             throw NotFoundException::classDoesNotExists($id);

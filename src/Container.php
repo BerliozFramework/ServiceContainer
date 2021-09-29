@@ -123,7 +123,7 @@ class Container implements ContainerInterface
     /**
      * @inheritDoc
      */
-    public function get(string $id): object
+    public function get(string $id): mixed
     {
         /** @var ContainerInterface $container */
         foreach ($this->getContainers() as $container) {
@@ -138,7 +138,7 @@ class Container implements ContainerInterface
     /**
      * @inheritDoc
      */
-    public function has($id): bool
+    public function has(string $id): bool
     {
         /** @var ContainerInterface $container */
         foreach ($this->getContainers() as $container) {

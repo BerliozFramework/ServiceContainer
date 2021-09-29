@@ -46,7 +46,7 @@ class ProviderContainer implements ContainerInterface
     /**
      * @inheritDoc
      */
-    public function get(string $id): object
+    public function get(string $id): mixed
     {
         foreach ($this->providers as $iProvider => $provider) {
             if (false === $provider->provides($id)) {
