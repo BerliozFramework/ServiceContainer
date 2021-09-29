@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Compatibility with `psr/container` version 2
 - "Nullable" services
 - "@template" annotation for main container
+- "@template" annotation for instantiator
 
 ## [2.0.3] - 2021-09-23
 
