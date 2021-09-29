@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
-- Move class `\Berlioz\ServiceContainer\Provider\ProviderTestCase` to `\Berlioz\ServiceContainer\Provider\ProviderTestCase`
+- Move class `\Berlioz\ServiceContainer\Tests\Provider\ProviderTestCase` to `\Berlioz\ServiceContainer\Provider\ProviderTestCase`
 
 ## [2.0.2] - 2021-09-23
 
