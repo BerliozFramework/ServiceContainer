@@ -116,7 +116,7 @@ class Service
      *
      * @return static
      */
-    public function setNullable(bool $nullable): static
+    public function setNullable(bool $nullable = true): static
     {
         $this->nullable = $nullable;
 
