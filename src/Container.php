@@ -128,7 +128,13 @@ class Container implements ContainerInterface
         /** @var ContainerInterface $container */
         foreach ($this->getContainers() as $container) {
             if (true === $container->has($id)) {
-                return $this->inflects($container->get($id));
+                $result = $container->get($id);
+
+                if (!is_object($result)) {
+                    return $result;
+                }
+
+                return $this->inflects($result);
             }
         }
 

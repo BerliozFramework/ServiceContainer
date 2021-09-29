@@ -24,13 +24,21 @@ class CacheStrategyTest extends TestCase
     public function test()
     {
         $service = new Service(Service4::class);
+        $service->setNullable(true);
         $cacheStrategy = new CacheStrategy(new MemoryCacheDriver());
 
         $this->assertNull($cacheStrategy->get($service));
+        $this->assertFalse($cacheStrategy->has($service));
+
+        $cacheStrategy->set($service, null);
+
+        $this->assertNull($cacheStrategy->get($service));
+        $this->assertTrue($cacheStrategy->has($service));
 
         $cacheStrategy->set($service, $obj = new Service4());
 
         $this->assertSame($obj, $cacheStrategy->get($service));
+        $this->assertTrue($cacheStrategy->has($service));
     }
 
     public function testCacheIntegrity()

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Compatibility with `psr/container` version 2
+- "Nullable" services
 
 ## [2.0.3] - 2021-09-23
 

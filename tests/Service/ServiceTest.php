@@ -62,6 +62,17 @@ class ServiceTest extends TestCase
         $this->assertEquals(Service1::class, $service->getClass());
     }
 
+    public function testIsNullable()
+    {
+        $service = new Service(Service1::class);
+
+        $this->assertFalse($service->isNullable());
+
+        $service->setNullable(true);
+
+        $this->assertTrue($service->isNullable());
+    }
+
     public function testGetFactory()
     {
         $service = new Service(Service1::class, factory: $factory = fn(...$args) => new Service1(...$args));
@@ -150,6 +161,24 @@ class ServiceTest extends TestCase
         $this->assertSame($object, $service->get(new Instantiator()));
     }
 
+    public function testGet_withFactoryNullResult()
+    {
+        $nbRetrieve = 0;
+        $service = new Service(
+            Service1::class,
+            factory: function ($param1, $param2, $param3) use (&$nbRetrieve) {
+                $nbRetrieve++;
+                return null;
+            }
+        );
+        $service->setNullable(true);
+        $service->addArguments(['param1' => 'foo', 'param2' => 'bar', 'param3' => 1]);
+
+        $this->assertNull($service->get(new Instantiator()));
+        $this->assertNull($service->get(new Instantiator()));
+        $this->assertEquals(1, $nbRetrieve);
+    }
+
     public function testGet_withBadResultFactory()
     {
         $this->expectException(ContainerException::class);
@@ -182,5 +211,35 @@ class ServiceTest extends TestCase
         $service2->addArguments(['param1' => 'foo', 'param2' => 'bar', 'param3' => 1]);
 
         $this->assertSame($service->get(new Instantiator()), $service2->get(new Instantiator()));
+    }
+
+    public function testGet_withFactoryNullResultAndCache()
+    {
+        $nbRetrieve = 0;
+        $cacheManager = new MemoryCacheDriver();
+
+        $service1 = new Service(
+            class:         Service1::class,
+            factory: function () use (&$nbRetrieve) {
+                $nbRetrieve++;
+                return null;
+            },
+            cacheStrategy: new CacheStrategy($cacheManager)
+        );
+        $service1->setNullable(true);
+
+        $service2 = new Service(
+            class:         Service1::class,
+            factory: function () use (&$nbRetrieve) {
+                $nbRetrieve++;
+                return null;
+            },
+            cacheStrategy: new CacheStrategy($cacheManager)
+        );
+        $service2->setNullable(true);
+
+        $this->assertNull($service1->get(new Instantiator()));
+        $this->assertNull($service2->get(new Instantiator()));
+        $this->assertEquals(1, $nbRetrieve);
     }
 }

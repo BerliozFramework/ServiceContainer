@@ -23,11 +23,13 @@ use Berlioz\ServiceContainer\Instantiator;
 class Service
 {
     protected string $class;
+    protected bool $nullable = false;
     protected array $provides = [];
     protected mixed $factory = null;
     protected array $arguments = [];
     protected array $calls = [];
     protected ?object $object = null;
+    protected bool $retrieved = false;
     protected bool $initialization = false;
 
     /**
@@ -48,6 +50,7 @@ class Service
         if (is_object($class)) {
             $this->object = $class;
             $class = get_class($class);
+            $this->retrieved = true;
             $this->initialization = true;
         }
 
@@ -64,6 +67,7 @@ class Service
     {
         return [
             'class' => $this->class,
+            'nullable' => $this->nullable,
             'factory' => $this->factory,
             'alias' => $this->alias,
             'arguments' => $this->arguments,
@@ -81,6 +85,7 @@ class Service
     public function __unserialize(array $data): void
     {
         $this->class = $data['class'] ?? throw new ContainerException('Serialization error');
+        $this->nullable = $data['nullable'] ?? throw new ContainerException('Serialization error');
         $this->factory = $data['factory'] ?? throw new ContainerException('Serialization error');
         $this->alias = $data['alias'] ?? throw new ContainerException('Serialization error');
         $this->arguments = $data['arguments'] ?? throw new ContainerException('Serialization error');
@@ -95,6 +100,30 @@ class Service
     public function getClass(): string
     {
         return $this->class;
+    }
+
+    /**
+     * Is nullable?
+     *
+     * @return bool
+     */
+    public function isNullable(): bool
+    {
+        return $this->nullable ?? false;
+    }
+
+    /**
+     * Set nullable.
+     *
+     * @param bool $nullable
+     *
+     * @return static
+     */
+    public function setNullable(bool $nullable): static
+    {
+        $this->nullable = $nullable;
+
+        return $this;
     }
 
     /**
@@ -159,7 +188,7 @@ class Service
     /**
      * Add arguments.
      *
-     * @param mixed[] $arguments
+     * @param array $arguments
      *
      * @return static
      */
@@ -174,7 +203,7 @@ class Service
      * Add call.
      *
      * @param string $method
-     * @param mixed[] $arguments
+     * @param array $arguments
      *
      * @return static
      */
@@ -230,13 +259,13 @@ class Service
      *
      * @param Instantiator $instantiator
      *
-     * @return object
+     * @return object|null
      * @throws ContainerException
      */
-    public function get(Instantiator $instantiator): object
+    public function get(Instantiator $instantiator): ?object
     {
-        // Already initialized?
-        if (null !== $this->object) {
+        // Already retrieved?
+        if (true === $this->retrieved) {
             return $this->object;
         }
 
@@ -247,36 +276,57 @@ class Service
         $this->initialization = true;
 
         // Get from cache
-        if (null !== ($object = $this->cacheStrategy?->get($this))) {
-            $this->object = $object;
+        if (true === $this->cacheStrategy?->has($this)) {
+            $this->object = $this->cacheStrategy?->get($this);
+            $this->retrieved = true;
             $this->calls($this->object, $instantiator);
 
-            return $object;
+            return $this->object;
         }
 
         // Factory?
         if (null !== $this->factory) {
-            $object = $this->factory($instantiator);
+            $result = $this->factory($instantiator);
 
             // NULL result of factory
-            if (null !== $object) {
-                if (!is_object($object) || !$object instanceof $this->class) {
-                    throw ContainerException::exceptedFactory($this, $object);
+            if (null !== $result) {
+                if (!is_object($result) || !$result instanceof $this->class) {
+                    throw ContainerException::exceptedFactory($this, $result);
                 }
-
-                $this->object = $object;
-                $this->calls($this->object, $instantiator);
-                $this->cacheStrategy?->set($this, $object);
-
-                return $object;
             }
+
+            $this->object = $result;
+            $this->assertNullable();
+            $this->retrieved = true;
+            $this->calls($this->object, $instantiator);
+            $this->cacheStrategy?->set($this, $this->object);
+
+            return $this->object;
         }
 
         $this->object = $instantiator->newInstanceOf($this->class, $this->getArguments());
+        $this->assertNullable();
+        $this->retrieved = true;
         $this->calls($this->object, $instantiator);
         $this->cacheStrategy?->set($this, $this->object);
 
         return $this->object;
+    }
+
+    /**
+     * Assert nullable.
+     *
+     * @throws ContainerException
+     */
+    protected function assertNullable(): void
+    {
+        if (true === $this->nullable) {
+            return;
+        }
+
+        if (null === $this->object) {
+            throw new ContainerException(sprintf('Service "%s" cannot be NULL', $this->getAlias()));
+        }
     }
 
     /**
@@ -295,18 +345,19 @@ class Service
     /**
      * Calls.
      *
-     * @param object $object
+     * @param object|null $object
      * @param Instantiator $instantiator
      *
-     * @return object
      * @throws ContainerException
      */
-    protected function calls(object $object, Instantiator $instantiator): object
+    protected function calls(?object $object, Instantiator $instantiator): void
     {
+        if (null === $object) {
+            return;
+        }
+
         foreach ($this->calls ?? [] as $call) {
             $instantiator->invokeMethod($this->object, $call[0], $call[1] ?? []);
         }
-
-        return $object;
     }
 }

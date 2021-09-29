@@ -38,6 +38,26 @@ class CacheStrategy
     }
 
     /**
+     * Has cache for service?
+     *
+     * @param Service $service
+     *
+     * @return bool
+     * @throws ContainerException
+     */
+    public function has(Service $service): bool
+    {
+        try {
+            return $this->cache->has($this->getCacheKey($service));
+        } catch (InvalidArgumentException $exception) {
+            throw new ContainerException(
+                message:  sprintf('Error during cache read of service "%s"', $service->getAlias()),
+                previous: $exception
+            );
+        }
+    }
+
+    /**
      * Get cache.
      *
      * @param Service $service
@@ -54,14 +74,16 @@ class CacheStrategy
 
             $object = $this->cache->get($this->getCacheKey($service));
 
-            if (!is_a($object, $service->getClass())) {
-                throw new ContainerException(sprintf('Cache integrity of service "%s"', $service->getAlias()));
+            if (!($service->isNullable() && null === $object)) {
+                if (!is_a($object, $service->getClass())) {
+                    throw new ContainerException(sprintf('Cache integrity of service "%s"', $service->getAlias()));
+                }
             }
 
             return $object;
         } catch (InvalidArgumentException $exception) {
             throw new ContainerException(
-                sprintf('Error during cache read of service "%s"', $service->getAlias()),
+                message:  sprintf('Error during cache read of service "%s"', $service->getAlias()),
                 previous: $exception
             );
         }
@@ -71,12 +93,12 @@ class CacheStrategy
      * Set cache.
      *
      * @param Service $service
-     * @param object $object
+     * @param object|null $object
      *
      * @return bool
      * @throws ContainerException
      */
-    public function set(Service $service, object $object): bool
+    public function set(Service $service, ?object $object): bool
     {
         try {
             return $this->cache->set($this->getCacheKey($service), $object, $this->ttl);
