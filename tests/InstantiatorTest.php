@@ -25,6 +25,7 @@ use Berlioz\ServiceContainer\Tests\Asset\Service7;
 use Berlioz\ServiceContainer\Tests\Asset\Service9;
 use Berlioz\ServiceContainer\Tests\Asset\WithParameter;
 use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 
 class InstantiatorTest extends TestCase
 {
@@ -205,6 +206,23 @@ class InstantiatorTest extends TestCase
                 'param2' => '@mySuperUnknownAlias'
             ]
         );
+    }
+
+    public function testNewInstanceOf_withNullableService()
+    {
+        $container = new Container();
+        $container->autoWiring();
+        $container->addService($service = new Service(WithParameter::class, factory: fn() => null));
+        $service->setNullable();
+        $instantiator = new Instantiator($container);
+
+        $result = $instantiator->newInstanceOf(Service7::class);
+        $this->assertNull($result->obj);
+
+        $reflectionProperty = new ReflectionProperty(Service::class, 'retrieved');
+        $reflectionProperty->setAccessible(true);
+
+        $this->assertTrue($reflectionProperty->getValue($service));
     }
 
     public function testInvokeMethod()

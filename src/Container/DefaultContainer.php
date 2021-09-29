@@ -86,7 +86,9 @@ class DefaultContainer implements ContainerInterface
      */
     public function get(string $id): mixed
     {
-        return $this->getService($id)?->get($this->instantiator) ?? throw NotFoundException::notFound($id);
+        $service = $this->getService($id) ?? throw NotFoundException::notFound($id);
+
+        return $service->get($this->instantiator);
     }
 
     /**
