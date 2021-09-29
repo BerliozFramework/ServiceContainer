@@ -76,11 +76,13 @@ class Instantiator
     /**
      * Create new instance of a class.
      *
-     * @param object|string $class Class name or object
+     * @template T
+     *
+     * @param object|class-string<T> $class Class name or object
      * @param array $arguments Arguments
      * @param bool $autoWiring
      *
-     * @return object
+     * @return T
      * @throws ContainerException
      */
     public function newInstanceOf(object|string $class, array $arguments = [], bool $autoWiring = true): object
