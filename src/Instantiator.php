@@ -237,7 +237,7 @@ class Instantiator
                             continue 2;
                         }
                     }
-                } catch (ArgumentException) {
+                } catch (ArgumentException $exception) {
                 }
             }
 
@@ -257,7 +257,7 @@ class Instantiator
                 continue;
             }
 
-            throw ArgumentException::missingArgument($parameterName);
+            throw ArgumentException::missingArgument($parameterName, $reflectionFunction, $exception ?? null);
         }
 
         return array_intersect_key($arguments, array_fill_keys($parameters, null));

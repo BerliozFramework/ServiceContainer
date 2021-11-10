@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [2.1.1] - 2021-11-10
 
+### Changed
+
+- Detailed exception message for missing argument
+
 ### Fixed
 
 - Variadic arguments without value

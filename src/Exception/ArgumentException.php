@@ -14,18 +14,50 @@ declare(strict_types=1);
 
 namespace Berlioz\ServiceContainer\Exception;
 
+use ReflectionFunction;
+use ReflectionFunctionAbstract;
+use ReflectionMethod;
+
 class ArgumentException extends InstantiatorException
 {
     /**
      * Missing argument.
      *
      * @param string $name
+     * @param ReflectionFunctionAbstract $reflectionFunction
+     * @param ArgumentException|null $previous
      *
      * @return static
      */
-    public static function missingArgument(string $name): static
-    {
-        return new static(sprintf('Missing argument "%s"', $name));
+    public static function missingArgument(
+        string $name,
+        ReflectionFunctionAbstract $reflectionFunction,
+        ?ArgumentException $previous = null
+    ): static {
+        if ($reflectionFunction instanceof ReflectionMethod) {
+            return new static(
+                sprintf(
+                    'Missing argument "%s" for "%s::%s"',
+                    $name,
+                    $reflectionFunction->class,
+                    $reflectionFunction->name
+                ),
+                previous: $previous
+            );
+        }
+
+        if ($reflectionFunction instanceof ReflectionFunction) {
+            return new static(
+                sprintf(
+                    'Missing argument "%s" for "%s"',
+                    $name,
+                    $reflectionFunction->name
+                ),
+                previous: $previous
+            );
+        }
+
+        return new static(sprintf('Missing argument "%s"', $name), previous: $previous);
     }
 
     /**

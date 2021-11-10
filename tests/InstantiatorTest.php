@@ -23,6 +23,7 @@ use Berlioz\ServiceContainer\Tests\Asset\Service3;
 use Berlioz\ServiceContainer\Tests\Asset\Service4;
 use Berlioz\ServiceContainer\Tests\Asset\Service7;
 use Berlioz\ServiceContainer\Tests\Asset\Service9;
+use Berlioz\ServiceContainer\Tests\Asset\WithDependency2;
 use Berlioz\ServiceContainer\Tests\Asset\WithoutConstructor;
 use Berlioz\ServiceContainer\Tests\Asset\WithParameter;
 use Berlioz\ServiceContainer\Tests\Asset\WithVariadicParameter;
@@ -130,6 +131,8 @@ class InstantiatorTest extends TestCase
     public function testNewInstanceOf_missingParameter()
     {
         $this->expectException(ContainerException::class);
+        $this->expectExceptionMessage(sprintf('Missing argument "param2" for "%s::__construct"', Service3::class));
+
         $instantiator = new Instantiator(null);
         $instantiator->newInstanceOf(
             Service3::class,
@@ -138,6 +141,24 @@ class InstantiatorTest extends TestCase
                 'param4' => 'test2',
             ]
         );
+    }
+
+    public function testNewInstanceOf_missingParameterInSubParameter()
+    {
+        try {
+            $instantiator = new Instantiator(null);
+            $instantiator->newInstanceOf(WithDependency2::class);
+        } catch (ArgumentException $exception) {
+            $this->assertEquals(
+                sprintf('Missing argument "param" for "%s::__construct"', WithDependency2::class),
+                $exception->getMessage()
+            );
+            $this->assertInstanceOf(ArgumentException::class, $exception->getPrevious());
+            $this->assertEquals(
+                sprintf('Missing argument "foo" for "%s::__construct"', WithParameter::class),
+                $exception->getPrevious()->getMessage()
+            );
+        }
     }
 
     public function testNewInstanceOf_withoutConstructor()
