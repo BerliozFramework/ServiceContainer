@@ -23,7 +23,9 @@ use Berlioz\ServiceContainer\Tests\Asset\Service3;
 use Berlioz\ServiceContainer\Tests\Asset\Service4;
 use Berlioz\ServiceContainer\Tests\Asset\Service7;
 use Berlioz\ServiceContainer\Tests\Asset\Service9;
+use Berlioz\ServiceContainer\Tests\Asset\WithoutConstructor;
 use Berlioz\ServiceContainer\Tests\Asset\WithParameter;
+use Berlioz\ServiceContainer\Tests\Asset\WithVariadicParameter;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 
@@ -83,6 +85,18 @@ class InstantiatorTest extends TestCase
         );
         $this->assertInstanceOf(Service2::class, $service);
         $this->assertEquals($service1, $service->getParam2());
+    }
+
+    public function testNewInstanceOf_withVariadic()
+    {
+        $instantiator = new Instantiator(null);
+        $service = $instantiator->newInstanceOf(
+            WithVariadicParameter::class,
+            [
+                'param' => new WithoutConstructor(),
+            ]
+        );
+        $this->assertInstanceOf(WithVariadicParameter::class, $service);
     }
 
     public function testNewInstanceOf_optionalParameters()

@@ -246,6 +246,11 @@ class Instantiator
                 continue;
             }
 
+            // Skip if variadic value
+            if ($reflectionParameter->isVariadic()) {
+                continue;
+            }
+
             // Allows null value?
             if (true === $reflectionParameter->allowsNull()) {
                 $arguments[$parameterName] = null;
