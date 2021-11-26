@@ -73,20 +73,34 @@ class Service implements Serializable
         }
     }
 
+    public function __serialize(): array
+    {
+        return [
+            'class' => $this->class,
+            'factory' => $this->factory,
+            'alias' => $this->alias,
+            'arguments' => $this->arguments,
+            'calls' => $this->calls
+        ];
+    }
+
+    public function __unserialize(array $data): void
+    {
+        $this->class = $data['class'];
+        $this->factory = $data['factory'];
+        $this->alias = $data['alias'];
+        $this->arguments = $data['arguments'];
+        $this->calls = $data['calls'];
+        $this->initialized = false;
+        $this->initialization = false;
+    }
+
     /**
      * @inheritdoc
      */
     public function serialize(): string
     {
-        return serialize(
-            [
-                'class' => $this->class,
-                'factory' => $this->factory,
-                'alias' => $this->alias,
-                'arguments' => $this->arguments,
-                'calls' => $this->calls
-            ]
-        );
+        return serialize($this->__serialize());
     }
 
     /**
@@ -94,15 +108,7 @@ class Service implements Serializable
      */
     public function unserialize($serialized)
     {
-        $tmpUnserialized = unserialize($serialized);
-
-        $this->class = $tmpUnserialized['class'];
-        $this->factory = $tmpUnserialized['factory'];
-        $this->alias = $tmpUnserialized['alias'];
-        $this->arguments = $tmpUnserialized['arguments'];
-        $this->calls = $tmpUnserialized['calls'];
-        $this->initialized = false;
-        $this->initialization = false;
+        $this->__unserialize(unserialize($serialized));
     }
 
     /**

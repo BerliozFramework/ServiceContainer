@@ -52,18 +52,39 @@ class ServiceContainer implements ServiceContainerInterface, Serializable
     }
 
     /**
+     * @throws ContainerException
+     */
+    public function __serialize(): array
+    {
+        return [
+            'classIndex' => $this->getInstantiator()->getClassIndex(),
+            'classes' => $this->classes,
+            'services' => $this->services
+        ];
+    }
+
+    /**
+     * @throws ContainerException
+     */
+    public function __unserialize(array $data): void
+    {
+        $this->classes = $data['classes'];
+        $this->services = $data['services'];
+        if (!empty($data['classIndex'])) {
+            $this->getInstantiator()->setClassIndex($data['classIndex']);
+        }
+
+        // Register me into services
+        $this->add(new Service($this));
+    }
+
+    /**
      * @inheritdoc
      * @throws ContainerException
      */
     public function serialize(): string
     {
-        return serialize(
-            [
-                'classIndex' => $this->getInstantiator()->getClassIndex(),
-                'classes' => $this->classes,
-                'services' => $this->services
-            ]
-        );
+        return serialize($this->__serialize());
     }
 
     /**
@@ -72,16 +93,7 @@ class ServiceContainer implements ServiceContainerInterface, Serializable
      */
     public function unserialize($serialized)
     {
-        $tmpUnserialized = unserialize($serialized);
-
-        $this->classes = $tmpUnserialized['classes'];
-        $this->services = $tmpUnserialized['services'];
-        if (!empty($tmpUnserialized['classIndex'])) {
-            $this->getInstantiator()->setClassIndex($tmpUnserialized['classIndex']);
-        }
-
-        // Register me into services
-        $this->add(new Service($this));
+        $this->__unserialize(unserialize($serialized));
     }
 
     ////////////////////
