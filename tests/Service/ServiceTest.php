@@ -20,6 +20,7 @@ use Berlioz\ServiceContainer\Service\Service;
 use Berlioz\ServiceContainer\Tests\Asset\RecursiveService;
 use Berlioz\ServiceContainer\Tests\Asset\Service1;
 use Berlioz\ServiceContainer\Tests\Asset\Service2;
+use Berlioz\ServiceContainer\Tests\Asset\Service4;
 use PHPUnit\Framework\TestCase;
 
 class ServiceTest extends TestCase
@@ -71,6 +72,17 @@ class ServiceTest extends TestCase
         $service->setNullable(true);
 
         $this->assertTrue($service->isNullable());
+    }
+
+    public function testIsShared()
+    {
+        $service = new Service(Service1::class);
+
+        $this->assertTrue($service->isShared());
+
+        $service->setShared(false);
+
+        $this->assertFalse($service->isShared());
     }
 
     public function testGetFactory()
@@ -177,6 +189,18 @@ class ServiceTest extends TestCase
         $this->assertNull($service->get(new Instantiator()));
         $this->assertNull($service->get(new Instantiator()));
         $this->assertEquals(1, $nbRetrieve);
+    }
+
+    public function testGet_notShared()
+    {
+        $service = new Service(Service4::class);
+        $service->setShared(false);
+
+        $this->assertInstanceOf(
+            Service4::class,
+            $object = $service->get(new Instantiator())
+        );
+        $this->assertNotSame($object, $service->get(new Instantiator()));
     }
 
     public function testGet_withBadResultFactory()

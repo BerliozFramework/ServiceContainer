@@ -82,6 +82,18 @@ $container->addService($service);
 
   > Constructor of Service object.
 
+- `Service::setNullable(bool $nullable = true): Service`
+
+  > Service can be null after factory execution (false by default).
+
+- `Service::setShared(bool $shared = true): Service`
+
+  > Share a service, always same instance returned for a shared service.
+
+- `Service::addProvide(string ...$provide): Service`
+
+  > Add provided class/interfaces/alias by service.
+
 - `Service::addArgument(string $name, mixed $value): Service`
 
   > Add argument to make an instance of service class.

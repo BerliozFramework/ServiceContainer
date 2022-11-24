@@ -21,6 +21,7 @@ class Service
 {
     protected string $class;
     protected bool $nullable = false;
+    protected bool $shared = true;
     protected array $provides = [];
     protected mixed $factory = null;
     protected array $arguments = [];
@@ -65,6 +66,7 @@ class Service
         return [
             'class' => $this->class,
             'nullable' => $this->nullable,
+            'shared' => $this->shared,
             'factory' => $this->factory,
             'alias' => $this->alias,
             'arguments' => $this->arguments,
@@ -83,6 +85,7 @@ class Service
     {
         $this->class = $data['class'] ?? throw new ContainerException('Serialization error');
         $this->nullable = $data['nullable'] ?? throw new ContainerException('Serialization error');
+        $this->shared = $data['shared'] ?? true;
         $this->factory = $data['factory'] ?? throw new ContainerException('Serialization error');
         $this->alias = $data['alias'] ?? throw new ContainerException('Serialization error');
         $this->arguments = $data['arguments'] ?? throw new ContainerException('Serialization error');
@@ -119,6 +122,30 @@ class Service
     public function setNullable(bool $nullable = true): static
     {
         $this->nullable = $nullable;
+
+        return $this;
+    }
+
+    /**
+     * Is shared?
+     *
+     * @return bool
+     */
+    public function isShared(): bool
+    {
+        return $this->shared ?? false;
+    }
+
+    /**
+     * Set shared.
+     *
+     * @param bool $shared
+     *
+     * @return static
+     */
+    public function setShared(bool $shared = true): static
+    {
+        $this->shared = $shared;
 
         return $this;
     }
@@ -272,13 +299,16 @@ class Service
         }
         $this->initialization = true;
 
-        // Get from cache
-        if (true === $this->cacheStrategy?->has($this)) {
-            $this->object = $this->cacheStrategy?->get($this);
-            $this->retrieved = true;
-            $this->calls($this->object, $instantiator);
+        // Get from cache only for shared services
+        if (true === $this->shared) {
+            if (true === $this->cacheStrategy?->has($this)) {
+                $this->object = $this->cacheStrategy?->get($this);
+                $this->retrieved = true;
+                $this->calls($this->object, $instantiator);
+                $this->initialization = false;
 
-            return $this->object;
+                return $this->object;
+            }
         }
 
         // Factory?
@@ -291,23 +321,18 @@ class Service
                     throw ContainerException::exceptedFactory($this, $result);
                 }
             }
-
-            $this->object = $result;
-            $this->assertNullable();
-            $this->retrieved = true;
-            $this->calls($this->object, $instantiator);
-            $this->cacheStrategy?->set($this, $this->object);
-
-            return $this->object;
+        } else {
+            $result = $instantiator->newInstanceOf($this->class, $this->getArguments());
         }
 
-        $this->object = $instantiator->newInstanceOf($this->class, $this->getArguments());
-        $this->assertNullable();
-        $this->retrieved = true;
-        $this->calls($this->object, $instantiator);
-        $this->cacheStrategy?->set($this, $this->object);
+        true === $this->shared && $this->object = $result;
+        $this->assertNullable($result);
+        $this->retrieved = $this->shared;
+        $this->calls($result, $instantiator);
+        true === $this->shared && $this->cacheStrategy?->set($this, $result);
+        $this->initialization = false;
 
-        return $this->object;
+        return $result;
     }
 
     /**
@@ -315,13 +340,13 @@ class Service
      *
      * @throws ContainerException
      */
-    protected function assertNullable(): void
+    protected function assertNullable(object|null $object): void
     {
         if (true === $this->nullable) {
             return;
         }
 
-        if (null === $this->object) {
+        if (null === $object) {
             throw new ContainerException(sprintf('Service "%s" cannot be NULL', $this->getAlias()));
         }
     }
