@@ -2,7 +2,7 @@
 
 [![Latest Version](https://img.shields.io/packagist/v/berlioz/service-container.svg?style=flat-square)](https://github.com/BerliozFramework/ServiceContainer/releases)
 [![Software license](https://img.shields.io/github/license/BerliozFramework/ServiceContainer.svg?style=flat-square)](https://github.com/BerliozFramework/ServiceContainer/blob/2.x/LICENSE)
-[![Build Status](https://img.shields.io/github/workflow/status/BerliozFramework/ServiceContainer/Tests/2.x.svg?style=flat-square)](https://github.com/BerliozFramework/ServiceContainer/actions/workflows/tests.yml?query=branch%3A2.x)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/BerliozFramework/ServiceContainer/tests.yml?branch=2.x&style=flat-square)](https://github.com/BerliozFramework/ServiceContainer/actions/workflows/tests.yml?query=branch%3A2.x)
 [![Quality Grade](https://img.shields.io/codacy/grade/cb21d20358cc4ba2be5ab42bf0ddb8b2/2.x.svg?style=flat-square)](https://www.codacy.com/manual/BerliozFramework/ServiceContainer)
 [![Total Downloads](https://img.shields.io/packagist/dt/berlioz/service-container.svg?style=flat-square)](https://packagist.org/packages/berlioz/service-container)
 
