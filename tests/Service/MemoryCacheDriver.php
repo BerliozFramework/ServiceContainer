@@ -40,7 +40,7 @@ class MemoryCacheDriver implements CacheInterface
     /**
      * @inheritDoc
      */
-    public function get($key, $default = null)
+    public function get($key, $default = null): mixed
     {
         if ($this->has($key)) {
             return $this->data[$key]['value'];
@@ -89,7 +89,7 @@ class MemoryCacheDriver implements CacheInterface
     /**
      * @inheritDoc
      */
-    public function getMultiple($keys, $default = null)
+    public function getMultiple($keys, $default = null): iterable
     {
         // TODO: Implement getMultiple() method.
     }
@@ -97,7 +97,7 @@ class MemoryCacheDriver implements CacheInterface
     /**
      * @inheritDoc
      */
-    public function setMultiple($values, $ttl = null)
+    public function setMultiple($values, $ttl = null): bool
     {
         // TODO: Implement setMultiple() method.
     }
@@ -105,7 +105,7 @@ class MemoryCacheDriver implements CacheInterface
     /**
      * @inheritDoc
      */
-    public function deleteMultiple($keys)
+    public function deleteMultiple($keys): bool
     {
         // TODO: Implement deleteMultiple() method.
     }
