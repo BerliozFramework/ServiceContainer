@@ -17,7 +17,7 @@ use Berlioz\ServiceContainer\Tests\Container\FakeServiceProvider;
 
 class FakeServiceProviderTest extends ProviderTestCase
 {
-    public function providers(): array
+    public static function providers(): array
     {
         return [
             [new FakeServiceProvider()],

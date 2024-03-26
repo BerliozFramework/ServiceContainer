@@ -36,7 +36,7 @@ abstract class ProviderTestCase extends TestCase
      *
      * @return array
      */
-    abstract public function providers(): array;
+    abstract public static function providers(): array;
 
     /**
      * @dataProvider providers
