@@ -233,6 +233,12 @@ class Instantiator
                         }
 
                         if (class_exists($reflectionType->getName())) {
+                            $reflectionClass = new ReflectionClass($reflectionType->getName());
+
+                            if (false === $reflectionClass->isInstantiable()) {
+                                continue 2;
+                            }
+
                             $arguments[$parameterName] = $this->newInstanceOf($reflectionType->getName());
                             continue 2;
                         }
