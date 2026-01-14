@@ -18,6 +18,7 @@ use Berlioz\ServiceContainer\Exception\ContainerException;
 use Berlioz\ServiceContainer\Exception\NotFoundException;
 use Berlioz\ServiceContainer\Instantiator;
 use Psr\Container\ContainerInterface;
+use ReflectionClass;
 use Throwable;
 
 class AutoWiringContainer implements ContainerInterface
@@ -79,6 +80,12 @@ class AutoWiringContainer implements ContainerInterface
             return true;
         }
 
-        return class_exists($id);
+
+        if (false === class_exists($id)) {
+            return false;
+        }
+
+        $reflectionClass = new ReflectionClass($id);
+        return $reflectionClass->isInstantiable();
     }
 }
